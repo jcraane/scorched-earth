@@ -42,6 +42,9 @@ class ScorchedEarthGame {
     // Explosion state
     var explosion by mutableStateOf<Explosion?>(null)
 
+    // Mini-bombs state (for Funky Bomb)
+    var miniBombs by mutableStateOf<List<Projectile>>(listOf())
+
     /**
      * Updates the game dimensions and regenerates content accordingly.
      * Call this when the window/canvas size changes.
@@ -62,6 +65,11 @@ class ScorchedEarthGame {
         if (explosion != null) {
             explosion = null
         }
+
+        // Reset mini-bombs if they exist
+        if (miniBombs.isNotEmpty()) {
+            miniBombs = listOf()
+        }
     }
 
     /**
@@ -74,15 +82,17 @@ class ScorchedEarthGame {
                 position = Offset(width * 0.1f, baseY), // 10% from left edge
                 color = androidx.compose.ui.graphics.Color.Red
             ).apply {
-                // Add 10 baby missiles to inventory
+                // Add missiles to inventory
                 inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+                inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
             },
             Player(
                 position = Offset(width * 0.9f, baseY), // 10% from right edge
                 color = androidx.compose.ui.graphics.Color.Blue
             ).apply {
-                // Add 10 baby missiles to inventory
+                // Add missiles to inventory
                 inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+                inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
             }
         )
     }
@@ -144,8 +154,101 @@ class ScorchedEarthGame {
             else -> {} // No updates needed for other states
         }
 
+        // Update mini-bombs if they exist
+        if (miniBombs.isNotEmpty()) {
+            updateMiniBombs(deltaTime)
+        }
+
         // Update explosion if it exists
         updateExplosion(deltaTime)
+    }
+
+    /**
+     * Updates the mini-bombs positions and checks for collisions.
+     * @param deltaTime Time elapsed since the last update in seconds
+     */
+    private fun updateMiniBombs(deltaTime: Float) {
+        val updatedMiniBombs = mutableListOf<Projectile>()
+
+        for (bomb in miniBombs) {
+            // Update mini-bomb position based on velocity and gravity
+            val gravity = 9.8f * 30f // Scaled gravity
+
+            val newVelocity = Offset(
+                bomb.velocity.x + wind * deltaTime,
+                bomb.velocity.y + gravity * deltaTime
+            )
+
+            val newPosition = Offset(
+                bomb.position.x + newVelocity.x * deltaTime,
+                bomb.position.y + newVelocity.y * deltaTime
+            )
+
+            // Add current position to the trail and maintain max trail length
+            val updatedTrail = (bomb.trail + bomb.position).takeLast(bomb.maxTrailLength)
+
+            // Check for collision with boundaries, terrain, or players
+            if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight ||
+                isCollidingWithTerrain(newPosition)) {
+                // Create an explosion for the mini-bomb with full blast radius
+                createExplosion(
+                    newPosition,
+                    Projectile(
+                        position = newPosition,
+                        velocity = newVelocity,
+                        type = bomb.type,
+                        minDamage = bomb.minDamage / 2, // Reduced damage for mini-bombs
+                        maxDamage = bomb.maxDamage / 2,
+                        blastRadius = bomb.blastRadius // Keep full blast radius
+                    )
+                )
+                continue // Skip adding this bomb to the updated list
+            }
+
+            // Check for collision with players
+            var hitPlayer = false
+            for ((index, player) in players.withIndex()) {
+                if (isCollidingWithPlayer(newPosition, player)) {
+                    // Create explosion at player's position with full blast radius
+                    createExplosion(
+                        player.position,
+                        Projectile(
+                            position = newPosition,
+                            velocity = newVelocity,
+                            type = bomb.type,
+                            minDamage = bomb.minDamage / 2,
+                            maxDamage = bomb.maxDamage / 2,
+                            blastRadius = bomb.blastRadius // Keep full blast radius
+                        )
+                    )
+
+                    // Apply direct hit damage (use half of mini-bomb's maxDamage for direct hit)
+                    val damage = bomb.maxDamage / 2
+                    applyDamageToPlayer(index, damage)
+
+                    hitPlayer = true
+                    break
+                }
+            }
+
+            if (!hitPlayer) {
+                // If no collision, update the mini-bomb
+                updatedMiniBombs.add(
+                    Projectile(
+                        position = newPosition,
+                        velocity = newVelocity,
+                        type = bomb.type,
+                        minDamage = bomb.minDamage,
+                        maxDamage = bomb.maxDamage,
+                        blastRadius = bomb.blastRadius,
+                        trail = updatedTrail
+                    )
+                )
+            }
+        }
+
+        // Update the mini-bombs list
+        miniBombs = updatedMiniBombs
     }
 
     /**
@@ -395,6 +498,59 @@ class ScorchedEarthGame {
 
         // Check for players within blast radius and apply damage
         applyBlastDamageToPlayers(position, explosionRadius, proj)
+
+        // Generate mini-bombs if this is a Funky Bomb
+        if (proj?.type == ProjectileType.FUNKY_BOMB) {
+            generateMiniBombs(position, proj)
+        }
+    }
+
+    /**
+     * Generates mini-bombs from a Funky Bomb explosion.
+     * @param position The position of the parent explosion
+     * @param parentProjectile The parent projectile (Funky Bomb)
+     */
+    private fun generateMiniBombs(position: Offset, parentProjectile: Projectile) {
+        val numberOfMiniBombs = Random.nextInt(5, 10) // Random number of mini-bombs
+        val newMiniBombs = mutableListOf<Projectile>()
+
+        for (i in 0 until numberOfMiniBombs) {
+            // Generate random angle and power for each mini-bomb
+            val angle = Random.nextFloat() * 2 * PI.toFloat()
+            val power = Random.nextFloat() * 200f + 100f // Random power between 100 and 300
+
+            // Calculate velocity based on angle and power
+            val velocity = Offset(
+                cos(angle) * power,
+                -sin(angle) * power
+            )
+
+            // Create a mini-bomb with reduced damage but same blast radius as parent
+            // Calculate initial position offset from explosion center to spread mini-bombs further
+            val initialOffset = Offset(
+                cos(angle) * 50f, // Spread mini-bombs 50 pixels from explosion center
+                -sin(angle) * 50f
+            )
+            val offsetPosition = Offset(
+                position.x + initialOffset.x,
+                position.y + initialOffset.y
+            )
+
+            val miniBomb = Projectile(
+                position = offsetPosition, // Start from offset position
+                velocity = velocity,
+                type = parentProjectile.type, // Same type as parent
+                minDamage = parentProjectile.minDamage / 3, // Reduced damage
+                maxDamage = parentProjectile.maxDamage / 3,
+                blastRadius = parentProjectile.blastRadius, // Same blast radius as parent
+                trail = listOf() // Start with empty trail
+            )
+
+            newMiniBombs.add(miniBomb)
+        }
+
+        // Add the new mini-bombs to the existing ones
+        miniBombs = miniBombs + newMiniBombs
     }
 
     /**
@@ -526,13 +682,20 @@ class ScorchedEarthGame {
     }
 
     /**
-     * Ends the projectile flight and switches to the next player.
+     * Ends the projectile flight and switches to the next player if no mini-bombs are in flight.
      */
     private fun endProjectileFlight() {
         projectile = null
-        gameState = GameState.WAITING_FOR_PLAYER
-        // Switch to next player
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+
+        // Only end the turn if there are no mini-bombs in flight
+        if (miniBombs.isEmpty()) {
+            gameState = GameState.WAITING_FOR_PLAYER
+            // Switch to next player
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+        } else {
+            // Keep the game state as PROJECTILE_IN_FLIGHT while mini-bombs are active
+            gameState = GameState.PROJECTILE_IN_FLIGHT
+        }
     }
 
     /**
@@ -630,7 +793,8 @@ enum class ProjectileType(
     SMALL_MISSILE("Small Missile", 20, 50, 90f, 1000),
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
-    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000)
+    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000),
+    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000)
 }
 
 /**

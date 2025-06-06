@@ -456,6 +456,7 @@ private fun getMissileColor(projectileType: ProjectileType): Color {
         ProjectileType.BIG_MISSILE -> Color(0xFFFF9800)  // Orange
         ProjectileType.DEATHS_HEAD -> Color(0xFFE91E63)  // Pink
         ProjectileType.NUCLEAR_BOMB -> Color(0xFFF44336)  // Red
+        ProjectileType.FUNKY_BOMB -> Color(0xFF9C27B0)
     }
 }
 
