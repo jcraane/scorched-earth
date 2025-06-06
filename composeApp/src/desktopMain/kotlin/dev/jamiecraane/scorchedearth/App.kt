@@ -221,7 +221,7 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
         game.explosion?.let { explosion ->
             drawCircle(
                 color = Color.Red,
-                radius = explosion.radius,
+                radius = explosion.currentRadius,
                 center = explosion.position
             )
         }

@@ -151,8 +151,18 @@ class ScorchedEarthGame {
                 // Explosion is finished
                 explosion = null
             } else {
-                // Update explosion time remaining
-                explosion = exp.copy(timeRemaining = newTimeRemaining)
+                // Calculate the progress of the animation (0.0 to 1.0)
+                val initialTime = 0.5f // Same as in createExplosion
+                val progress = 1.0f - (newTimeRemaining / initialTime)
+
+                // Calculate the new radius based on the progress
+                val newRadius = exp.initialRadius + (exp.maxRadius - exp.initialRadius) * progress
+
+                // Update explosion time remaining and radius
+                explosion = exp.copy(
+                    timeRemaining = newTimeRemaining,
+                    currentRadius = newRadius
+                )
             }
         }
     }
@@ -262,7 +272,8 @@ class ScorchedEarthGame {
     private fun createExplosion(position: Offset) {
         explosion = Explosion(
             position = position,
-            radius = 30f, // Reasonable radius as mentioned in the requirements
+            initialRadius = 10f, // Start with a small radius
+            maxRadius = 90f, // 3 times bigger than the original 30f
             timeRemaining = 0.5f // Half a second duration
         )
     }
@@ -340,6 +351,8 @@ data class Projectile(
  */
 data class Explosion(
     val position: Offset,
-    val radius: Float,
+    val initialRadius: Float = 10f,
+    val maxRadius: Float,
+    val currentRadius: Float = initialRadius,
     val timeRemaining: Float
 )
