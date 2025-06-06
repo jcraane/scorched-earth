@@ -144,6 +144,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 ).apply {
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
                     inventory.addItem(ProjectileType.LEAPFROG, 3)
+                    inventory.addItem(ProjectileType.TRACER, 10)
                 }
             )
         }
@@ -474,7 +475,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             // Check for collision with boundaries
             if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
                 // For MIRV, don't explode on boundary collision - just remove it
-                if (proj.type == ProjectileType.MIRV) {
+                if (proj.type == ProjectileType.MIRV || proj.type == ProjectileType.TRACER) {
                     endProjectileFlight()
                 } else if (proj.type == ProjectileType.LEAPFROG && proj.bounceCount < proj.maxBounces) {
                     // Leapfrog bounces off boundaries
@@ -488,8 +489,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
             // Check for collision with terrain
             if (isCollidingWithTerrain(newPosition)) {
-                // For MIRV, don't explode on terrain collision - just remove it
-                if (proj.type == ProjectileType.MIRV) {
+                // For MIRV and TRACER, don't explode on terrain collision - just remove it
+                if (proj.type == ProjectileType.MIRV || proj.type == ProjectileType.TRACER) {
                     endProjectileFlight()
                 } else if (proj.type == ProjectileType.LEAPFROG && proj.bounceCount < proj.maxBounces) {
                     // Leapfrog bounces off terrain
@@ -504,8 +505,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             // Check for collision with players
             for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
-                    // For MIRV, don't explode on player collision - just remove it
-                    if (proj.type == ProjectileType.MIRV) {
+                    // For MIRV and TRACER, don't explode on player collision - just remove it
+                    if (proj.type == ProjectileType.MIRV || proj.type == ProjectileType.TRACER) {
                         endProjectileFlight()
                     } else {
                         // Create explosion at player's position
@@ -1069,5 +1070,6 @@ enum class ProjectileType(
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000),
     FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
     MIRV("MIRV", 15, 40, 80f, 3500),
-    LEAPFROG("Leapfrog", 15, 35, 70f, 3000)
+    LEAPFROG("Leapfrog", 15, 35, 70f, 3000),
+    TRACER("Tracer", 0, 0, 0f, 500, purchaseQuantity = 10)
 }

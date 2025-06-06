@@ -92,7 +92,7 @@ fun MissileItem(
             ) {
                 // Damage info
                 Text(
-                    text = "DMG: ${projectileType.minDamage}-${projectileType.maxDamage}",
+                    text = if (projectileType == ProjectileType.TRACER) "No Damage" else "DMG: ${projectileType.minDamage}-${projectileType.maxDamage}",
                     color = Color.Companion.LightGray,
                     fontSize = 10.sp
                 )
@@ -148,5 +148,6 @@ fun getMissileColor(projectileType: ProjectileType): Color {
         ProjectileType.FUNKY_BOMB -> Color(0xFF9C27B0)  // Purple
         ProjectileType.MIRV -> Color(0xFF9D50B0)
         ProjectileType.LEAPFROG -> Color(0xFF00BCD4)  // Cyan
+        ProjectileType.TRACER -> Color(0xFFAAAAAA)  // Light Gray
     }
 }

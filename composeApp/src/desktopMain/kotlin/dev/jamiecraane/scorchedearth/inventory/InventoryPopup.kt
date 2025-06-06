@@ -43,7 +43,7 @@ fun InventoryPopup(
     ) {
         Card(
             modifier = Modifier.Companion
-                .width(400.dp)
+                .width(600.dp)
                 .padding(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.Companion.DarkGray.copy(alpha = 0.9f)
@@ -86,7 +86,7 @@ fun InventoryPopup(
                 }
 
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(4),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
