@@ -270,12 +270,93 @@ class ScorchedEarthGame {
      * @param position The position of the explosion
      */
     private fun createExplosion(position: Offset) {
+        val explosionRadius = 90f // 3 times bigger than the original 30f
         explosion = Explosion(
             position = position,
             initialRadius = 10f, // Start with a small radius
-            maxRadius = 90f, // 3 times bigger than the original 30f
+            maxRadius = explosionRadius,
             timeRemaining = 0.5f // Half a second duration
         )
+
+        // Deform terrain if the explosion is colliding with it
+        if (isCollidingWithTerrain(position)) {
+            deformTerrain(position, explosionRadius)
+        }
+    }
+
+    /**
+     * Deforms the terrain at the explosion point based on the blast radius.
+     * @param position The position of the explosion
+     * @param blastRadius The radius of the explosion
+     */
+    private fun deformTerrain(position: Offset, blastRadius: Float) {
+        // Create a copy of the terrain heights map
+        val newTerrainHeights = terrainHeights.toMutableMap()
+
+        // Get all x-coordinates in the terrain
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        // Calculate the deformation for each x-coordinate within the blast radius
+        for (x in terrainXCoords) {
+            // Calculate horizontal distance from explosion center
+            val horizontalDistance = kotlin.math.abs(x - position.x)
+
+            // Only deform terrain within the blast radius
+            if (horizontalDistance <= blastRadius) {
+                // Get current height at this x-coordinate
+                val currentHeight = terrainHeights[x] ?: continue
+
+                // Calculate deformation amount based on distance from explosion center
+                // The closer to the center, the deeper the crater
+                val deformationFactor = 1.0f - (horizontalDistance / blastRadius)
+                val deformationAmount = blastRadius * deformationFactor
+
+                // Apply deformation (raise the terrain value, which means digging a crater)
+                // The y-coordinate increases downward in the canvas
+                val newHeight = currentHeight + deformationAmount
+
+                // Update the height map
+                newTerrainHeights[x] = newHeight
+            }
+        }
+
+        // Update the terrain heights map
+        terrainHeights = newTerrainHeights
+
+        // Regenerate the terrain path with the new heights
+        terrain = regenerateTerrainPath(gameWidth, gameHeight)
+    }
+
+    /**
+     * Regenerates the terrain path using the current terrain heights.
+     * @param width Width of the game area
+     * @param height Height of the game area
+     * @return A Path object representing the terrain
+     */
+    private fun regenerateTerrainPath(width: Float, height: Float): Path {
+        val path = Path()
+
+        // Get all x-coordinates in the terrain sorted
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        if (terrainXCoords.isEmpty()) {
+            return generateTerrain(width, height)
+        }
+
+        // Start at the left edge
+        path.moveTo(0f, height)
+        path.lineTo(terrainXCoords.first(), terrainHeights[terrainXCoords.first()] ?: 0f)
+
+        // Connect all terrain points
+        for (x in terrainXCoords.drop(1)) {
+            path.lineTo(x, terrainHeights[x] ?: 0f)
+        }
+
+        // Close the path at the bottom
+        path.lineTo(width, height)
+        path.close()
+
+        return path
     }
 
     /**
