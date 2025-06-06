@@ -4,8 +4,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -20,17 +22,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
 import kotlin.math.sin
 
 /**
  * Intro screen shown before the game starts.
  *
- * @param onStartGame Callback when the start button is clicked, with the selected number of players
+ * @param onStartGame Callback when the start button is clicked, with the selected number of players and sky style
  */
 @Composable
-fun IntroScreen(onStartGame: (Int) -> Unit) {
+fun IntroScreen(onStartGame: (Int, SkyStyleSelector) -> Unit) {
     // State for the number of players slider
     var numberOfPlayers by remember { mutableStateOf(2f) }
+
+    // State for the selected sky style
+    var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
 
     Box(
         modifier = Modifier
@@ -138,11 +144,47 @@ fun IntroScreen(onStartGame: (Int) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Sky style selection
+            Text(
+                text = "Sky Style:",
+                color = Color.White,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Radio buttons for sky style selection
+            Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                SkyStyleSelector.values().forEach { skyStyle ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (skyStyle == selectedSkyStyle),
+                                onClick = { selectedSkyStyle = skyStyle }
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (skyStyle == selectedSkyStyle),
+                            onClick = { selectedSkyStyle = skyStyle }
+                        )
+                        Text(
+                            text = skyStyle.displayName,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Start button
             Button(
-                onClick = { onStartGame(numberOfPlayers.toInt()) },
+                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

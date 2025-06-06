@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
+import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -25,14 +26,18 @@ fun App() {
     // State to track player names
     var playerNames by remember { mutableStateOf(listOf<String>()) }
 
+    // State to track the selected sky style
+    var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
+
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     when (currentScreen) {
         Screen.INTRO -> {
             IntroScreen(
-                onStartGame = { players ->
+                onStartGame = { players, skyStyle ->
                     numberOfPlayers = players
+                    selectedSkyStyle = skyStyle
                     currentScreen = Screen.PLAYER_NAMES
                 }
             )
@@ -50,7 +55,7 @@ fun App() {
 
         Screen.GAME -> {
             // Game is started, create the game instance
-            val game = remember(numberOfPlayers, playerNames) {
+            val game = remember(numberOfPlayers, playerNames, selectedSkyStyle) {
                 ScorchedEarthGame(numberOfPlayers).apply {
                     // Set player names
                     players.forEachIndexed { index, player ->
@@ -58,6 +63,9 @@ fun App() {
                             player.name = playerNames[index]
                         }
                     }
+
+                    // Set the sky style
+                    skyStyle = selectedSkyStyle.toSkyStyle()
                 }
             }
 
