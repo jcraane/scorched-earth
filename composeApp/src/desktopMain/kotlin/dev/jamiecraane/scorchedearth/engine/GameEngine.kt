@@ -426,7 +426,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 position = newPosition,
                 velocity = newVelocity,
                 type = proj.type,
-                trail = updatedTrail
+                trail = updatedTrail,
+                bounceCount = proj.bounceCount,
+                maxBounces = proj.maxBounces
             )
 
             // Check for collision with boundaries
@@ -530,7 +532,16 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // If this was the last allowed bounce, create a final explosion
         if (proj.bounceCount + 1 >= proj.maxBounces) {
-            createExplosion(position, projectile)
+            // Create a larger final explosion with increased blast radius and damage
+            val finalExplosionProjectile = Projectile(
+                position = position,
+                velocity = newVelocity,
+                type = proj.type,
+                blastRadius = proj.blastRadius * 2.0f, // Double the normal blast radius
+                minDamage = proj.minDamage * 2, // Double the damage
+                maxDamage = proj.maxDamage * 2
+            )
+            createExplosion(position, finalExplosionProjectile)
             endProjectileFlight()
         }
     }
