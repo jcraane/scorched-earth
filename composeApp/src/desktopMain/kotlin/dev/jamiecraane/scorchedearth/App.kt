@@ -105,29 +105,6 @@ private fun GameUI(game: ScorchedEarthGame, initialCanvasSize: Size) {
             .fillMaxSize()
             .background(Color(0xFF87CEEB)) // Sky blue background
     ) {
-        // Display money for left player (upper left corner)
-        if (game.players.isNotEmpty()) {
-            Text(
-                text = "$${game.players[0].money}",
-                color = Color.White,
-                fontSize = 32.sp,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-            )
-
-            // Display money for right player (upper right corner)
-            if (game.players.size > 1) {
-                Text(
-                    text = "$${game.players[1].money}",
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                )
-            }
-        }
 
         // Game canvas where all rendering happens
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -266,6 +243,14 @@ private fun GameUI(game: ScorchedEarthGame, initialCanvasSize: Size) {
                                 Text(
                                     text = "Select Item",
                                     color = Color.White,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                // Display player's money
+                                Text(
+                                    text = "Money: $${game.players[game.currentPlayerIndex].money}",
+                                    color = Color.Yellow,
+                                    fontSize = 16.sp,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
 
