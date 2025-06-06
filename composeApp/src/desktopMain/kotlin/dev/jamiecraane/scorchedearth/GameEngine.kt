@@ -260,16 +260,34 @@ class ScorchedEarthGame {
             }
 
             // Check for collision with players
-            for (player in players) {
+            for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
-                    createExplosion(newPosition)
-                    endProjectileFlight()
+                    // Create explosion at player's position
+                    createExplosion(player.position)
+
+                    // Remove the hit player from the players list
+                    val updatedPlayers = players.toMutableList()
+                    updatedPlayers.removeAt(index)
+                    players = updatedPlayers
+
+                    // Adjust current player index if necessary
+                    if (currentPlayerIndex >= updatedPlayers.size) {
+                        currentPlayerIndex = 0
+                    } else if (index <= currentPlayerIndex && currentPlayerIndex > 0) {
+                        currentPlayerIndex--
+                    }
+
+                    // Check for game over condition
+                    if (updatedPlayers.size <= 1) {
+                        gameState = GameState.GAME_OVER
+                    } else {
+                        endProjectileFlight()
+                    }
                     return@let
                 }
             }
         }
     }
-
     /**
      * Checks if a point is colliding with the terrain.
      * @param position The position to check
