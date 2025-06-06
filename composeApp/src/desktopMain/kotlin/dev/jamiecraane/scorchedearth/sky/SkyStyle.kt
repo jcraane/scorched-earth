@@ -79,10 +79,22 @@ enum class SkyStyle(val displayName: String) {
             for (i in 0 until count) {
                 val x = random.nextFloat() * width
                 val y = random.nextFloat() * height * 0.7f // Stars only in the top 70% of the sky
-                val size = 1f + random.nextFloat() * 2f // Random size between 1 and 3
+                val baseSize = 1f + random.nextFloat() * 2f // Random size between 1 and 3
                 val brightness = 0.5f + random.nextFloat() * 0.5f // Random brightness between 0.5 and 1.0
+                val flickerSpeed = 0.02f + random.nextFloat() * 0.08f // Random flicker speed between 0.02 and 0.1
+                val flickerRange = 0.2f + random.nextFloat() * 0.3f // Random flicker range between 0.2 and 0.5
+                val flickerDirection = if (random.nextBoolean()) 1 else -1 // Random initial flicker direction
 
-                stars.add(Star(x, y, size, brightness))
+                stars.add(Star(
+                    x = x,
+                    y = y,
+                    baseSize = baseSize,
+                    size = baseSize,
+                    brightness = brightness,
+                    flickerSpeed = flickerSpeed,
+                    flickerRange = flickerRange,
+                    flickerDirection = flickerDirection
+                ))
             }
 
             return stars
@@ -96,9 +108,32 @@ enum class SkyStyle(val displayName: String) {
             val random = Random(System.currentTimeMillis())
 
             stars.forEach { star ->
-                // Randomly adjust brightness up or down by a small amount
-                val adjustment = (random.nextFloat() - 0.5f) * 0.2f // -0.1 to +0.1
+                // Determine if we should change flicker direction
+                // Higher flickerSpeed means more frequent direction changes
+                if (random.nextFloat() < star.flickerSpeed * 0.5f) {
+                    star.flickerDirection *= -1 // Reverse direction
+                }
+
+                // Calculate brightness adjustment based on direction and speed
+                val adjustment = star.flickerSpeed * star.flickerDirection
+
+                // Update brightness
                 star.brightness = (star.brightness + adjustment).coerceIn(0.3f, 1.0f)
+
+                // If we hit the brightness limits, reverse direction
+                if (star.brightness >= 1.0f || star.brightness <= 0.3f) {
+                    star.flickerDirection *= -1
+                }
+
+                // Also slightly adjust star size for a twinkling effect
+                val sizeAdjustment = adjustment * 0.3f // Smaller size adjustment
+                star.size = (star.baseSize + sizeAdjustment).coerceIn(star.baseSize * 0.7f, star.baseSize * 1.3f)
+
+                // Occasionally add a random "twinkle" effect
+                if (random.nextFloat() < 0.02f) { // 2% chance per update
+                    star.brightness = 1.0f // Brief flash to full brightness
+                    star.size = star.baseSize * 1.5f // Brief increase in size
+                }
             }
         }
     }
@@ -110,5 +145,18 @@ enum class SkyStyle(val displayName: String) {
  * @property y Y-coordinate of the star
  * @property size Size of the star
  * @property brightness Brightness of the star (0.0-1.0)
+ * @property flickerSpeed How quickly this star flickers (0.0-1.0)
+ * @property flickerRange The range of brightness variation for this star
+ * @property flickerDirection Current direction of flickering (1 = brightening, -1 = dimming)
+ * @property baseSize Base size of the star before any animation
  */
-data class Star(val x: Float, val y: Float, val size: Float, var brightness: Float)
+data class Star(
+    val x: Float,
+    val y: Float,
+    val baseSize: Float,
+    var size: Float,
+    var brightness: Float,
+    val flickerSpeed: Float = 0.05f,
+    val flickerRange: Float = 0.3f,
+    var flickerDirection: Int = 1
+)
