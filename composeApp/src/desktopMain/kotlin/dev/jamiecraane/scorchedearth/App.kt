@@ -573,6 +573,27 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
             )
         }
 
+        game.miniBombs.forEach { miniBomb ->
+            // Draw the trail with fade-out effect
+            miniBomb.trail.forEachIndexed { index, position ->
+                // Calculate alpha based on position in trail (older positions are more transparent)
+                val alpha = (index + 1).toFloat() / miniBomb.trail.size.toFloat()
+
+                drawCircle(
+                    color = Color.Gray.copy(alpha = alpha * 0.7f),
+                    radius = 2f + (1f * alpha), // Smaller circles for older positions
+                    center = position
+                )
+            }
+
+            // Draw the actual mini-bomb projectile
+            drawCircle(
+                color = Color.Red, // Different color to distinguish from main projectile
+                radius = 3f,
+                center = miniBomb.position
+            )
+        }
+
         // Draw explosion if it exists
         game.explosion?.let { explosion ->
             // Create radial gradient from light (hot) center to dark red outer

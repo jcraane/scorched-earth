@@ -196,61 +196,64 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     private fun updateMiniBombs(deltaTime: Float) {
         val updatedMiniBombs = mutableListOf<Projectile>()
 
-        for (bomb in miniBombs) {
+        for (miniBomb in miniBombs) {
             // Update mini-bomb position based on velocity and gravity
             val gravity = 9.8f * 30f // Scaled gravity
 
             val newVelocity = Offset(
-                bomb.velocity.x + wind * deltaTime,
-                bomb.velocity.y + gravity * deltaTime
+                miniBomb.velocity.x + wind * deltaTime,
+                miniBomb.velocity.y + gravity * deltaTime
             )
 
             val newPosition = Offset(
-                bomb.position.x + newVelocity.x * deltaTime,
-                bomb.position.y + newVelocity.y * deltaTime
+                miniBomb.position.x + newVelocity.x * deltaTime,
+                miniBomb.position.y + newVelocity.y * deltaTime
             )
 
-            // Add current position to the trail and maintain max trail length
-            val updatedTrail = (bomb.trail + bomb.position).takeLast(bomb.maxTrailLength)
+            // Update trail
+            val newTrail = (miniBomb.trail + miniBomb.position).takeLast(10)
 
-            // Check for collision with boundaries, terrain, or players
-            if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight ||
-                isCollidingWithTerrain(newPosition)) {
-                // Create an explosion for the mini-bomb with full blast radius
-                createExplosion(
-                    newPosition,
-                    Projectile(
-                        position = newPosition,
-                        velocity = newVelocity,
-                        type = bomb.type,
-                        minDamage = bomb.minDamage / 2, // Reduced damage for mini-bombs
-                        maxDamage = bomb.maxDamage / 2,
-                        blastRadius = bomb.blastRadius // Keep full blast radius
-                    )
-                )
-                continue // Skip adding this bomb to the updated list
+            val updatedMiniBomb = Projectile(
+                position = newPosition,
+                velocity = newVelocity,
+                type = miniBomb.type,
+                minDamage = miniBomb.minDamage,
+                maxDamage = miniBomb.maxDamage,
+                blastRadius = miniBomb.blastRadius,
+                trail = newTrail
+            )
+
+            // Check for collision with boundaries
+            if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
+                createExplosion(newPosition, updatedMiniBomb)
+                continue // Don't add this mini-bomb to the updated list
+            }
+
+            // Check for collision with terrain
+            if (isCollidingWithTerrain(newPosition)) {
+                createExplosion(newPosition, updatedMiniBomb)
+                continue // Don't add this mini-bomb to the updated list
             }
 
             // Check for collision with players
             var hitPlayer = false
             for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
-                    // Create explosion at player's position with full blast radius
-                    createExplosion(
-                        player.position,
-                        Projectile(
-                            position = newPosition,
-                            velocity = newVelocity,
-                            type = bomb.type,
-                            minDamage = bomb.minDamage / 2,
-                            maxDamage = bomb.maxDamage / 2,
-                            blastRadius = bomb.blastRadius // Keep full blast radius
-                        )
-                    )
+                    createExplosion(player.position, updatedMiniBomb)
 
-                    // Apply direct hit damage (use half of mini-bomb's maxDamage for direct hit)
-                    val damage = bomb.maxDamage / 2
-                    applyDamageToPlayer(index, damage)
+                    // Create completely new list without the hit player
+                    val newPlayersList = players.toMutableList()
+                    newPlayersList.removeAt(index)
+                    players = newPlayersList.toList()
+
+                    // Adjust current player index if needed
+                    if (players.isEmpty()) {
+                        gameState = GameState.GAME_OVER
+                    } else if (currentPlayerIndex >= players.size) {
+                        currentPlayerIndex = 0
+                    } else if (index <= currentPlayerIndex && currentPlayerIndex > 0) {
+                        currentPlayerIndex--
+                    }
 
                     hitPlayer = true
                     break
@@ -258,30 +261,11 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             }
 
             if (!hitPlayer) {
-                // If no collision, update the mini-bomb
-                updatedMiniBombs.add(
-                    Projectile(
-                        position = newPosition,
-                        velocity = newVelocity,
-                        type = bomb.type,
-                        minDamage = bomb.minDamage,
-                        maxDamage = bomb.maxDamage,
-                        blastRadius = bomb.blastRadius,
-                        trail = updatedTrail
-                    )
-                )
+                updatedMiniBombs.add(updatedMiniBomb)
             }
         }
 
-        // Update the mini-bombs list
         miniBombs = updatedMiniBombs
-
-        // If all mini-bombs are gone and we're still in PROJECTILE_IN_FLIGHT state,
-        // end the turn and move to the next player
-        if (miniBombs.isEmpty() && gameState == GameState.PROJECTILE_IN_FLIGHT && projectile == null) {
-            gameState = GameState.WAITING_FOR_PLAYER
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
-        }
     }
 
     /**
@@ -381,82 +365,92 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 proj.position.y + newVelocity.y * deltaTime
             )
 
-            // Create a new projectile instance to trigger recomposition
-            // Add current position to the trail and maintain max trail length
-            val updatedTrail = (proj.trail + proj.position).takeLast(proj.maxTrailLength)
-
-            // Check if this is a MIRV that should split
+            // Special handling for MIRV - check if it should split at apex
             if (proj.type == ProjectileType.MIRV) {
-                // Check if MIRV is at its apex (vertical velocity changes from negative to positive)
-                val isAtApex = proj.velocity.y < 0 && newVelocity.y > 0
+                // Check if MIRV has reached its apex (velocity.y becomes positive, meaning it's falling)
+                val wasRising = proj.velocity.y <= 0
+                val nowFalling = newVelocity.y > 0
 
-                // Check if MIRV is near a target (within a certain distance of terrain or player)
-                val distanceToTerrain = getDistanceToTerrain(newPosition)
-                val distanceToNearestPlayer = getDistanceToNearestPlayer(newPosition)
-
-                // Only consider "near target" if the projectile has traveled some distance
-                // This prevents immediate explosion right after firing
-                val hasMinimumTravel = proj.trail.size >= 5
-                val isNearTarget = hasMinimumTravel && (distanceToTerrain < 100f || distanceToNearestPlayer < 100f)
-
-                // Split the MIRV if it's at its apex or near a target
-                if (isAtApex || isNearTarget) {
-                    // Generate MIRV sub-projectiles
+                if (wasRising && nowFalling) {
+                    // MIRV has reached its apex - split into sub-projectiles
                     generateMIRVSubProjectiles(newPosition, proj, newVelocity)
-
-                    // Create a small explosion at the split point
-                    val smallExplosion = Explosion(
-                        position = newPosition,
-                        initialRadius = 5f,
-                        maxRadius = 30f,
-                        timeRemaining = 0.3f
-                    )
-                    explosion = smallExplosion
-
-                    // End the parent projectile's flight
-                    endProjectileFlight()
+                    projectile = null // Remove the main MIRV projectile
                     return@let
                 }
             }
 
+            // Create a new projectile instance with updated trail to trigger recomposition
+            val newTrail = (proj.trail + proj.position).takeLast(10) // Keep last 10 positions for trail
             projectile = Projectile(
                 position = newPosition,
                 velocity = newVelocity,
                 type = proj.type,
-                trail = updatedTrail
+                minDamage = proj.minDamage,
+                maxDamage = proj.maxDamage,
+                blastRadius = proj.blastRadius,
+                trail = newTrail
             )
 
             // Check for collision with boundaries
             if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
-                createExplosion(newPosition, projectile)
-                endProjectileFlight()
+                // For MIRV, don't explode on boundary collision - just remove it
+                if (proj.type == ProjectileType.MIRV) {
+                    projectile = null
+                    endProjectileFlight()
+                } else {
+                    createExplosion(newPosition, proj)
+                    endProjectileFlight()
+                }
                 return@let
             }
 
             // Check for collision with terrain
             if (isCollidingWithTerrain(newPosition)) {
-                createExplosion(newPosition, projectile)
-                endProjectileFlight()
+                // For MIRV, don't explode on terrain collision - just remove it
+                if (proj.type == ProjectileType.MIRV) {
+                    projectile = null
+                    endProjectileFlight()
+                } else {
+                    createExplosion(newPosition, proj)
+                    endProjectileFlight()
+                }
                 return@let
             }
 
             // Check for collision with players
             for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
-                    // Create explosion at player's position
-                    createExplosion(player.position, projectile)
+                    // For MIRV, don't explode on player collision - just remove it
+                    if (proj.type == ProjectileType.MIRV) {
+                        projectile = null
+                        endProjectileFlight()
+                    } else {
+                        // Create explosion at player's position instead of projectile position
+                        createExplosion(player.position, proj)
 
-                    // Apply direct hit damage (use projectile's maxDamage for direct hit)
-                    val damage = projectile?.maxDamage ?: 100
-                    applyDamageToPlayer(index, damage)
+                        // Create completely new list without the hit player to ensure recomposition
+                        val newPlayersList = players.toMutableList()
+                        newPlayersList.removeAt(index)
+                        players = newPlayersList.toList() // Convert back to immutable list
 
-                    endProjectileFlight()
+                        // Adjust current player index if needed
+                        if (players.isEmpty()) {
+                            gameState = GameState.GAME_OVER
+                            projectile = null
+                            return@let
+                        } else if (currentPlayerIndex >= players.size) {
+                            currentPlayerIndex = 0
+                        } else if (index <= currentPlayerIndex && currentPlayerIndex > 0) {
+                            currentPlayerIndex--
+                        }
+
+                        endProjectileFlight()
+                    }
                     return@let
                 }
             }
         }
     }
-
     /**
      * Gets the distance from a position to the nearest terrain point.
      * @param position The position to check
@@ -670,7 +664,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // Calculate spread angles for sub-projectiles (in a cone pattern)
         val spreadAngleRange = PI.toFloat() / 3f // 60 degrees spread
-        val angleStep = spreadAngleRange / (numberOfSubProjectiles - 1)
+        val angleStep = if (numberOfSubProjectiles > 1) spreadAngleRange / (numberOfSubProjectiles - 1) else 0f
 
         // Calculate base velocity magnitude (slightly less than parent)
         val baseVelocityMagnitude = kotlin.math.sqrt(parentVelocity.x * parentVelocity.x + parentVelocity.y * parentVelocity.y) * 0.8f
@@ -691,11 +685,11 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             val subProjectile = Projectile(
                 position = position, // All start from the same position where MIRV splits
                 velocity = velocity,
-                type = parentProjectile.type, // Same type as parent
+                type = ProjectileType.SMALL_MISSILE, // Convert to regular missiles for sub-projectiles
                 minDamage = parentProjectile.minDamage / 2, // Reduced damage
                 maxDamage = parentProjectile.maxDamage / 2,
                 blastRadius = parentProjectile.blastRadius / 2, // Reduced blast radius
-                trail = listOf() // Start with empty trail
+                trail = listOf(position) // Start with initial position in trail
             )
 
             newSubProjectiles.add(subProjectile)
@@ -704,7 +698,6 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         // Add the new sub-projectiles to the existing mini-bombs list
         miniBombs = miniBombs + newSubProjectiles
     }
-
     /**
      * Applies damage to players within the blast radius.
      * Damage decreases with distance from explosion center.
