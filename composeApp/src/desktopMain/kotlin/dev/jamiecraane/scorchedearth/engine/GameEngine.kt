@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Path
 import dev.jamiecraane.scorchedearth.model.Explosion
 import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.Projectile
+import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -28,6 +29,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
     // Game state
     var gameState by mutableStateOf(GameState.WAITING_FOR_PLAYER)
+
+    // Sky style - determines the background gradient
+    var skyStyle by mutableStateOf(SkyStyle.AFTERNOON)
 
     // Terrain height data for collision detection
     var terrainHeights by mutableStateOf<Map<Float, Float>>(mapOf())

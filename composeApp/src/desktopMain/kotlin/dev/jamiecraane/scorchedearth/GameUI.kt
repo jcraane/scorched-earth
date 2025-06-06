@@ -29,6 +29,7 @@ import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.inventory.InventoryButton
 import dev.jamiecraane.scorchedearth.inventory.InventoryPopup
+import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import kotlinx.coroutines.delay
 // No need to import components from the same package
 
@@ -60,7 +61,6 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF87CEEB)) // Sky blue background
     ) {
 
         // Game canvas where all rendering happens
@@ -90,6 +90,27 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
                 val currentPlayer = game.players[game.currentPlayerIndex]
                 val playerName = if (currentPlayer.name.isNotEmpty()) currentPlayer.name else "Player ${game.currentPlayerIndex + 1}"
                 Text("Player: $playerName", color = Color.White)
+
+                // Sky style selector
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Sky: ${game.skyStyle.displayName}", color = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            // Cycle through sky styles
+                            game.skyStyle = when (game.skyStyle) {
+                                SkyStyle.SUNRISE -> SkyStyle.AFTERNOON
+                                SkyStyle.AFTERNOON -> SkyStyle.SUNSET
+                                SkyStyle.SUNSET -> SkyStyle.SUNRISE
+                                else -> SkyStyle.AFTERNOON // Fallback for safety
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ) {
+                        Text("Change")
+                    }
+                }
+
                 Text("Wind: ${game.wind.toInt()} mph", color = Color.White)
             }
 

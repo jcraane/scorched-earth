@@ -18,6 +18,12 @@ import kotlin.math.sin
 fun DrawScope.drawGame(game: ScorchedEarthGame) {
     // Scale all game elements to match the canvas size
     scale(scaleX = 1f, scaleY = 1f) {
+        // Draw sky with gradient based on current sky style
+        drawRect(
+            brush = game.skyStyle.createGradientBrush(),
+            size = size
+        )
+
         // Draw terrain
         drawPath(
             path = game.terrain,
