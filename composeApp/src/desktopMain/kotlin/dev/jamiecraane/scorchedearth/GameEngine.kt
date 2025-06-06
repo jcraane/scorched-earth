@@ -42,7 +42,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     // Explosion state
     var explosion by mutableStateOf<Explosion?>(null)
 
-    // Mini-bombs state (for Funky Bomb)
+    // Mini-bombs state (for Funky Bomb and MIRV)
     var miniBombs by mutableStateOf<List<Projectile>>(listOf())
 
     /**
@@ -115,6 +115,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     // Add missiles to inventory
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
                     inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
+                    inventory.addItem(ProjectileType.MIRV, 3)
                 }
             )
         }
@@ -274,6 +275,13 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // Update the mini-bombs list
         miniBombs = updatedMiniBombs
+
+        // If all mini-bombs are gone and we're still in PROJECTILE_IN_FLIGHT state,
+        // end the turn and move to the next player
+        if (miniBombs.isEmpty() && gameState == GameState.PROJECTILE_IN_FLIGHT && projectile == null) {
+            gameState = GameState.WAITING_FOR_PLAYER
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+        }
     }
 
     /**
@@ -377,6 +385,40 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             // Add current position to the trail and maintain max trail length
             val updatedTrail = (proj.trail + proj.position).takeLast(proj.maxTrailLength)
 
+            // Check if this is a MIRV that should split
+            if (proj.type == ProjectileType.MIRV) {
+                // Check if MIRV is at its apex (vertical velocity changes from negative to positive)
+                val isAtApex = proj.velocity.y < 0 && newVelocity.y > 0
+
+                // Check if MIRV is near a target (within a certain distance of terrain or player)
+                val distanceToTerrain = getDistanceToTerrain(newPosition)
+                val distanceToNearestPlayer = getDistanceToNearestPlayer(newPosition)
+
+                // Only consider "near target" if the projectile has traveled some distance
+                // This prevents immediate explosion right after firing
+                val hasMinimumTravel = proj.trail.size >= 5
+                val isNearTarget = hasMinimumTravel && (distanceToTerrain < 100f || distanceToNearestPlayer < 100f)
+
+                // Split the MIRV if it's at its apex or near a target
+                if (isAtApex || isNearTarget) {
+                    // Generate MIRV sub-projectiles
+                    generateMIRVSubProjectiles(newPosition, proj, newVelocity)
+
+                    // Create a small explosion at the split point
+                    val smallExplosion = Explosion(
+                        position = newPosition,
+                        initialRadius = 5f,
+                        maxRadius = 30f,
+                        timeRemaining = 0.3f
+                    )
+                    explosion = smallExplosion
+
+                    // End the parent projectile's flight
+                    endProjectileFlight()
+                    return@let
+                }
+            }
+
             projectile = Projectile(
                 position = newPosition,
                 velocity = newVelocity,
@@ -413,6 +455,41 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 }
             }
         }
+    }
+
+    /**
+     * Gets the distance from a position to the nearest terrain point.
+     * @param position The position to check
+     * @return The distance to the nearest terrain point
+     */
+    private fun getDistanceToTerrain(position: Offset): Float {
+        // Get the terrain height at this x-coordinate
+        val terrainHeight = getTerrainHeightAtX(position.x)
+
+        // Calculate vertical distance to terrain
+        return kotlin.math.abs(position.y - terrainHeight)
+    }
+
+    /**
+     * Gets the distance from a position to the nearest player.
+     * @param position The position to check
+     * @return The distance to the nearest player
+     */
+    private fun getDistanceToNearestPlayer(position: Offset): Float {
+        var minDistance = Float.MAX_VALUE
+
+        for (player in players) {
+            val distance = kotlin.math.sqrt(
+                (position.x - player.position.x) * (position.x - player.position.x) +
+                (position.y - player.position.y) * (position.y - player.position.y)
+            )
+
+            if (distance < minDistance) {
+                minDistance = distance
+            }
+        }
+
+        return minDistance
     }
 
     /**
@@ -576,6 +653,56 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // Add the new mini-bombs to the existing ones
         miniBombs = miniBombs + newMiniBombs
+    }
+
+    /**
+     * Generates sub-projectiles from a MIRV at its apex or near target.
+     * @param position The position where the MIRV splits
+     * @param parentProjectile The parent projectile (MIRV)
+     * @param parentVelocity The velocity of the parent projectile at split time
+     */
+    private fun generateMIRVSubProjectiles(position: Offset, parentProjectile: Projectile, parentVelocity: Offset) {
+        val numberOfSubProjectiles = 5 // Fixed number of sub-projectiles for predictability
+        val newSubProjectiles = mutableListOf<Projectile>()
+
+        // Calculate spread angle based on parent velocity direction
+        val parentAngle = kotlin.math.atan2(-parentVelocity.y, parentVelocity.x)
+
+        // Calculate spread angles for sub-projectiles (in a cone pattern)
+        val spreadAngleRange = PI.toFloat() / 3f // 60 degrees spread
+        val angleStep = spreadAngleRange / (numberOfSubProjectiles - 1)
+
+        // Calculate base velocity magnitude (slightly less than parent)
+        val baseVelocityMagnitude = kotlin.math.sqrt(parentVelocity.x * parentVelocity.x + parentVelocity.y * parentVelocity.y) * 0.8f
+
+        for (i in 0 until numberOfSubProjectiles) {
+            // Calculate angle for this sub-projectile
+            // Center sub-projectile continues on parent trajectory, others spread out
+            val angleOffset = -spreadAngleRange / 2f + i * angleStep
+            val angle = parentAngle + angleOffset
+
+            // Calculate velocity based on angle and base velocity
+            val velocity = Offset(
+                cos(angle) * baseVelocityMagnitude,
+                -sin(angle) * baseVelocityMagnitude
+            )
+
+            // Create a sub-projectile with reduced damage and blast radius
+            val subProjectile = Projectile(
+                position = position, // All start from the same position where MIRV splits
+                velocity = velocity,
+                type = parentProjectile.type, // Same type as parent
+                minDamage = parentProjectile.minDamage / 2, // Reduced damage
+                maxDamage = parentProjectile.maxDamage / 2,
+                blastRadius = parentProjectile.blastRadius / 2, // Reduced blast radius
+                trail = listOf() // Start with empty trail
+            )
+
+            newSubProjectiles.add(subProjectile)
+        }
+
+        // Add the new sub-projectiles to the existing mini-bombs list
+        miniBombs = miniBombs + newSubProjectiles
     }
 
     /**
@@ -821,7 +948,8 @@ enum class ProjectileType(
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000),
-    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000)
+    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
+    MIRV("MIRV", 35, 70, 120f, 4000)
 }
 
 /**
