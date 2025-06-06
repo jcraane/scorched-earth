@@ -101,8 +101,10 @@ class CPUPlayerController(private val game: ScorchedEarthGame) {
         val distance = calculateDistance(player.position, target.position)
         val windAdjustment = game.wind * 0.5f // Wind adjustment factor
 
-        // Add some randomness to make CPU less perfect
-        val randomAngleAdjustment = Random.nextFloat() * 10f - 5f // ±5 degrees
+        // Add more significant randomness to make CPU less predictable
+        // The further the target, the more randomness we add
+        val distanceFactor = (distance / 500f).coerceIn(0.5f, 1.5f)
+        val randomAngleAdjustment = Random.nextFloat() * 20f * distanceFactor - 10f * distanceFactor // ±10-15 degrees
         angleDegrees += randomAngleAdjustment
 
         // Adjust for wind
@@ -111,13 +113,19 @@ class CPUPlayerController(private val game: ScorchedEarthGame) {
         // Clamp angle to valid range (-90 to 90)
         angleDegrees = angleDegrees.coerceIn(-90f, 90f)
 
-        // Calculate power based on distance
-        // Base power calculation - adjust these values based on game testing
-        val basePower = (distance / 20f).coerceIn(20f, 100f)
+        // Calculate power based on distance with a more realistic approach
+        // For closer targets, we need less power
+        val distanceRatio = (distance / 800f).coerceIn(0.3f, 0.9f) // Scale distance to a reasonable power range
+        val basePower = 50f + (distanceRatio * 40f) // Power between 50-90 based on distance
 
-        // Add some randomness to power
-        val randomPowerAdjustment = Random.nextFloat() * 10f - 5f // ±5 power
+        // Add randomness to power that scales with distance
+        val randomPowerAdjustment = Random.nextFloat() * 20f - 10f // ±10 power
         var power = basePower + randomPowerAdjustment
+
+        // Occasionally use less power for nearby targets
+        if (distance < 300f && Random.nextFloat() < 0.7f) {
+            power *= Random.nextFloat() * 0.3f + 0.7f // 70-100% of calculated power
+        }
 
         // Clamp power to valid range (10 to 100)
         power = power.coerceIn(10f, 100f)
