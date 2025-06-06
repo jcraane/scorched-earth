@@ -540,6 +540,19 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
 
         // Draw projectile if in flight
         game.projectile?.let { projectile ->
+            // Draw the trail with fade-out effect
+            projectile.trail.forEachIndexed { index, position ->
+                // Calculate alpha based on position in trail (older positions are more transparent)
+                val alpha = (index + 1).toFloat() / projectile.trail.size.toFloat()
+
+                drawCircle(
+                    color = Color.Gray.copy(alpha = alpha * 0.7f),
+                    radius = 3f + (2f * alpha), // Smaller circles for older positions
+                    center = position
+                )
+            }
+
+            // Draw the actual projectile
             drawCircle(
                 color = Color.Black,
                 radius = 5f,

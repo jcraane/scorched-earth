@@ -246,10 +246,14 @@ class ScorchedEarthGame {
             )
 
             // Create a new projectile instance to trigger recomposition
+            // Add current position to the trail and maintain max trail length
+            val updatedTrail = (proj.trail + proj.position).takeLast(proj.maxTrailLength)
+
             projectile = Projectile(
                 position = newPosition,
                 velocity = newVelocity,
-                type = proj.type
+                type = proj.type,
+                trail = updatedTrail
             )
 
             // Check for collision with boundaries
@@ -593,7 +597,8 @@ class ScorchedEarthGame {
         projectile = Projectile(
             position = Offset(player.position.x, player.position.y - 20f),
             velocity = velocity,
-            type = player.selectedProjectileType
+            type = player.selectedProjectileType,
+            trail = listOf() // Initialize with empty trail
         )
 
         gameState = GameState.PROJECTILE_IN_FLIGHT
@@ -650,6 +655,8 @@ data class Player(
  * @param minDamage Minimum damage dealt at the outer edge of the blast radius
  * @param maxDamage Maximum damage dealt on direct hit
  * @param blastRadius Radius of the explosion when the projectile hits
+ * @param trail List of previous positions to create a trail effect
+ * @param maxTrailLength Maximum number of positions to keep in the trail
  */
 data class Projectile(
     val position: Offset,
@@ -657,7 +664,9 @@ data class Projectile(
     val type: ProjectileType,
     val minDamage: Int = type.minDamage,
     val maxDamage: Int = type.maxDamage,
-    val blastRadius: Float = type.blastRadius
+    val blastRadius: Float = type.blastRadius,
+    val trail: List<Offset> = listOf(),
+    val maxTrailLength: Int = 15
 )
 
 /**
