@@ -6,6 +6,14 @@ import dev.jamiecraane.scorchedearth.engine.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.Inventory
 
 /**
+ * Defines the type of player (human or CPU).
+ */
+enum class PlayerType {
+    HUMAN,
+    CPU
+}
+
+/**
  * Represents a player in the game.
  */
 data class Player(
@@ -17,5 +25,6 @@ data class Player(
     var power: Float = 50f,
     var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
     var money: Int = 1000,
-    val inventory: Inventory = Inventory()
+    val inventory: Inventory = Inventory(),
+    var type: PlayerType = PlayerType.HUMAN
 )

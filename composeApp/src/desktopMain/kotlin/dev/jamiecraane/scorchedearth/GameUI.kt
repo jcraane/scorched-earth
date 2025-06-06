@@ -37,9 +37,14 @@ import kotlinx.coroutines.delay
  *
  * @param game The game engine instance
  * @param initialCanvasSize The initial size of the canvas
+ * @param cpuController Optional CPU player controller for handling AI turns
  */
 @Composable
-fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geometry.Size) {
+fun GameUI(
+    game: ScorchedEarthGame,
+    initialCanvasSize: androidx.compose.ui.geometry.Size,
+    cpuController: dev.jamiecraane.scorchedearth.engine.CPUPlayerController? = null
+) {
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(initialCanvasSize) }
 
@@ -52,6 +57,34 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
             lastTime = currentTime
 
             game.update(deltaTime)
+
+            // Handle CPU player turns
+            if (game.gameState == GameState.AIMING &&
+                game.players.isNotEmpty() &&
+                game.currentPlayerIndex < game.players.size) {
+
+                val currentPlayer = game.players[game.currentPlayerIndex]
+
+                // Check if current player is CPU and we have a CPU controller
+                if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU && cpuController != null) {
+                    // Make CPU decision
+                    if (cpuController.makeDecision(currentPlayer)) {
+                        // Add a small delay to make CPU turns visible
+                        delay(500)
+
+                        // Fire projectile with CPU-determined angle and power
+                        game.fireProjectile(currentPlayer.angle, currentPlayer.power)
+                    } else {
+                        // If CPU couldn't make a decision (e.g., no valid targets), skip turn
+                        game.gameState = GameState.WAITING_FOR_PLAYER
+                        game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.size
+                    }
+                } else {
+                    // Not a CPU player, reset to waiting state
+                    game.gameState = GameState.WAITING_FOR_PLAYER
+                }
+            }
+
             delay(16) // ~60 FPS
         }
     }

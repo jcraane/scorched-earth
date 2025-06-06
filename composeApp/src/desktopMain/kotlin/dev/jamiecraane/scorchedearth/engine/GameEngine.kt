@@ -200,6 +200,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     fun update(deltaTime: Float) {
         when (gameState) {
             GameState.PROJECTILE_IN_FLIGHT -> updateProjectile(deltaTime)
+            GameState.WAITING_FOR_PLAYER -> {
+                // Check if current player is CPU
+                val currentPlayer = players[currentPlayerIndex]
+                if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU) {
+                    // CPU player's turn - set game state to AIMING to prevent multiple shots
+                    gameState = GameState.AIMING
+                }
+            }
+            GameState.AIMING -> {
+                // This state is used to prevent CPU from firing multiple shots in a single frame
+                // CPU player logic is handled in the CPUPlayerController
+            }
             else -> {} // No updates needed for other states
         }
 

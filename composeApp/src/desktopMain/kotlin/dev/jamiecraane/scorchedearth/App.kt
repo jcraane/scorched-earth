@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
+import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
+import dev.jamiecraane.scorchedearth.model.PlayerType
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -23,8 +25,8 @@ fun App() {
     // State to track the number of players
     var numberOfPlayers by remember { mutableStateOf(2) }
 
-    // State to track player names
-    var playerNames by remember { mutableStateOf(listOf<String>()) }
+    // State to track player setups (name and type)
+    var playerSetups by remember { mutableStateOf(listOf<PlayerSetup>()) }
 
     // State to track the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
@@ -46,8 +48,8 @@ fun App() {
         Screen.PLAYER_NAMES -> {
             PlayerNameInputScreen(
                 numberOfPlayers = numberOfPlayers,
-                onComplete = { names ->
-                    playerNames = names
+                onComplete = { setups ->
+                    playerSetups = setups
                     currentScreen = Screen.GAME
                 }
             )
@@ -55,12 +57,13 @@ fun App() {
 
         Screen.GAME -> {
             // Game is started, create the game instance
-            val game = remember(numberOfPlayers, playerNames, selectedSkyStyle) {
+            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle) {
                 ScorchedEarthGame(numberOfPlayers).apply {
-                    // Set player names
+                    // Set player names and types
                     players.forEachIndexed { index, player ->
-                        if (index < playerNames.size) {
-                            player.name = playerNames[index]
+                        if (index < playerSetups.size) {
+                            player.name = playerSetups[index].name
+                            player.type = playerSetups[index].type
                         }
                     }
 
@@ -69,8 +72,13 @@ fun App() {
                 }
             }
 
+            // Create CPU player controller
+            val cpuController = remember(game) {
+                CPUPlayerController(game)
+            }
+
             // Game UI
-            GameUI(game, canvasSize)
+            GameUI(game, canvasSize, cpuController)
         }
     }
 }
