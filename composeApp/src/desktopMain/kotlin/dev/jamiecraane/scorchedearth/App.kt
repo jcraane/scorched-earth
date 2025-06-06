@@ -1,44 +1,56 @@
 package dev.jamiecraane.scorchedearth
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-import scorched_earth.composeapp.generated.resources.Res
-import scorched_earth.composeapp.generated.resources.compose_multiplatform
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+    // Create a game instance to manage state
+    val game = remember { ScorchedEarthGame() }
+
+    // Main game container
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF87CEEB)) // Sky blue background
+    ) {
+        // Game canvas where all rendering happens
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Draw the game elements
+            drawGame(game)
         }
     }
+}
+
+// Function to draw all game elements
+private fun DrawScope.drawGame(game: ScorchedEarthGame) {
+    // Draw a simple placeholder terrain for now
+    drawRect(
+        color = Color(0xFF8B4513), // Brown color for terrain
+        topLeft = Offset(0f, size.height * 0.7f),
+        size = androidx.compose.ui.geometry.Size(size.width, size.height * 0.3f)
+    )
+
+    // Draw a placeholder tank
+    drawCircle(
+        color = Color.Green,
+        radius = 20f,
+        center = Offset(100f, size.height * 0.7f - 20f)
+    )
+}
+
+// Game state class
+class ScorchedEarthGame {
+    // Game state will be implemented in Phase 2
 }
