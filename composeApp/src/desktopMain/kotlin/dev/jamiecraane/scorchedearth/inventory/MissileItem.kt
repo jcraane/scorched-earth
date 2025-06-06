@@ -149,5 +149,6 @@ fun getMissileColor(projectileType: ProjectileType): Color {
         ProjectileType.MIRV -> Color(0xFF9D50B0)
         ProjectileType.LEAPFROG -> Color(0xFF00BCD4)  // Cyan
         ProjectileType.TRACER -> Color(0xFFAAAAAA)  // Light Gray
+        ProjectileType.BABY_NUKE -> Color(0xFFF0756E)
     }
 }

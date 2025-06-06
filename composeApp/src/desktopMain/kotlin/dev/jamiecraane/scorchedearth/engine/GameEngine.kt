@@ -1073,6 +1073,7 @@ enum class ProjectileType(
     SMALL_MISSILE("Small Missile", 20, 50, 90f, 1000),
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
+    BABY_NUKE("Baby Nuke", 60, 125, 650f, 10000, purchaseQuantity = 3),
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 1000f, 12000),
     FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
     MIRV("MIRV", 15, 40, 80f, 3500),
