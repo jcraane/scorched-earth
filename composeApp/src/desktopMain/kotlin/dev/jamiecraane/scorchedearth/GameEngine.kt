@@ -161,8 +161,14 @@ class ScorchedEarthGame {
     fun fireProjectile(angle: Float, power: Float) {
         val player = players[currentPlayerIndex]
         val angleRadians = angle * PI.toFloat() / 180f
+
+        // Determine direction multiplier based on player
+        // Player 0 (red, left side) fires right (positive direction)
+        // Player 1 (blue, right side) fires left (negative direction)
+        val directionMultiplier = if (currentPlayerIndex == 0) 1f else -1f
+
         val velocity = Offset(
-            cos(angleRadians) * power * 2f,
+            cos(angleRadians) * power * 2f * directionMultiplier,
             -sin(angleRadians) * power * 2f
         )
 
