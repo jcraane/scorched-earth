@@ -177,12 +177,21 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
             // Draw tank cannon
             val angleRadians = player.angle * Math.PI.toFloat() / 180f
             val cannonLength = 30f
+
+            // For the blue player (index 1), we need to flip the angle to face left
+            val adjustedAngleRadians = if (index == 1) {
+                // Convert angle to face left: 180° - angle
+                (180f - player.angle) * Math.PI.toFloat() / 180f
+            } else {
+                angleRadians
+            }
+
             drawLine(
                 color = player.color,
                 start = player.position,
                 end = Offset(
-                    player.position.x + cos(angleRadians) * cannonLength,
-                    player.position.y - sin(angleRadians) * cannonLength
+                    player.position.x + cos(adjustedAngleRadians) * cannonLength,
+                    player.position.y - sin(adjustedAngleRadians) * cannonLength
                 ),
                 strokeWidth = 5f,
                 cap = StrokeCap.Round
