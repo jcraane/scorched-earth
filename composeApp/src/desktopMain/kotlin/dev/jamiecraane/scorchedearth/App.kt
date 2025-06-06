@@ -2,17 +2,28 @@ package dev.jamiecraane.scorchedearth
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -34,6 +46,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.cos
@@ -138,6 +152,9 @@ fun App() {
             }
 
             // Missile type selection
+            var showMissilePopup by remember { mutableStateOf(false) }
+            val currentMissile = game.players[game.currentPlayerIndex].selectedProjectileType
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -146,29 +163,76 @@ fun App() {
                     modifier = Modifier.width(100.dp),
                     color = Color.White)
 
-                Column(
-                    modifier = Modifier.weight(1f)
+                // Button to show current missile and open popup
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .clickable { showMissilePopup = true },
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.DarkGray.copy(alpha = 0.7f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    ProjectileType.values().forEach { projectileType ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${currentMissile.displayName} (Damage: ${currentMissile.minDamage}-${currentMissile.maxDamage})",
+                            color = Color.White
+                        )
+                    }
+                }
+
+                // Missile selection popup
+                if (showMissilePopup) {
+                    Popup(
+                        alignment = Alignment.Center,
+                        onDismissRequest = { showMissilePopup = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .width(400.dp)
+                                .padding(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.DarkGray.copy(alpha = 0.9f)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            androidx.compose.material3.RadioButton(
-                                selected = game.players[game.currentPlayerIndex].selectedProjectileType == projectileType,
-                                onClick = {
-                                    val players = game.players.toMutableList()
-                                    players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
-                                        selectedProjectileType = projectileType
-                                    )
-                                    game.players = players
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Select Missile",
+                                    color = Color.White,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(ProjectileType.values()) { projectileType ->
+                                        MissileItem(
+                                            projectileType = projectileType,
+                                            isSelected = game.players[game.currentPlayerIndex].selectedProjectileType == projectileType,
+                                            onClick = {
+                                                val players = game.players.toMutableList()
+                                                players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
+                                                    selectedProjectileType = projectileType
+                                                )
+                                                game.players = players
+                                                showMissilePopup = false
+                                            }
+                                        )
+                                    }
                                 }
-                            )
-                            Text(
-                                text = "${projectileType.displayName} (Damage: ${projectileType.minDamage}-${projectileType.maxDamage})",
-                                color = Color.White,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
+                            }
                         }
                     }
                 }
@@ -188,6 +252,76 @@ fun App() {
                 Text("FIRE!")
             }
         }
+    }
+}
+
+/**
+ * Composable function to display a missile item in the grid.
+ */
+@Composable
+private fun MissileItem(
+    projectileType: ProjectileType,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.5f)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color.Yellow else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color(0xFF444444) else Color(0xFF333333)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Missile icon (simple colored circle for now)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(getMissileColor(projectileType), RoundedCornerShape(50))
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Missile name
+            Text(
+                text = projectileType.displayName,
+                color = Color.White,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            // Damage info
+            Text(
+                text = "Damage: ${projectileType.minDamage}-${projectileType.maxDamage}",
+                color = Color.LightGray,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Returns a color for the missile based on its type.
+ */
+private fun getMissileColor(projectileType: ProjectileType): Color {
+    return when (projectileType) {
+        ProjectileType.BABY_MISSILE -> Color(0xFF8BC34A)  // Light Green
+        ProjectileType.SMALL_MISSILE -> Color(0xFFFFEB3B)  // Yellow
+        ProjectileType.BIG_MISSILE -> Color(0xFFFF9800)  // Orange
+        ProjectileType.DEATHS_HEAD -> Color(0xFFE91E63)  // Pink
+        ProjectileType.NUCLEAR_BOMB -> Color(0xFFF44336)  // Red
     }
 }
 
