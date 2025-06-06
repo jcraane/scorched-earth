@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,6 +30,7 @@ import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.inventory.InventoryButton
 import dev.jamiecraane.scorchedearth.inventory.InventoryPopup
+import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import kotlinx.coroutines.delay
 
 // No need to import components from the same package
@@ -51,6 +53,9 @@ fun GameUI(
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(initialCanvasSize) }
 
+    // State to force recomposition for star animation
+    var animationTrigger by remember { mutableLongStateOf(0L) }
+
     // Game loop using LaunchedEffect
     LaunchedEffect(Unit) {
         var lastTime = System.currentTimeMillis()
@@ -60,6 +65,11 @@ fun GameUI(
             lastTime = currentTime
 
             game.update(deltaTime)
+
+            // Force recomposition for star animation when night sky is active
+            if (game.skyStyle == SkyStyle.NIGHT) {
+                animationTrigger = currentTime
+            }
 
             // Handle CPU player turns
             if (game.gameState == GameState.AIMING &&
@@ -122,6 +132,11 @@ fun GameUI(
             }
 
             // Draw the game elements
+            // Access animationTrigger to ensure recomposition when stars need to animate
+            if (game.skyStyle == SkyStyle.NIGHT) {
+                // This read access ensures recomposition when animationTrigger changes
+                val l_ = animationTrigger
+            }
             drawGame(game)
         }
 
