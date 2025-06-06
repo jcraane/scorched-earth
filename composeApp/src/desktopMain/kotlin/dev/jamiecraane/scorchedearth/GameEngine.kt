@@ -265,28 +265,54 @@ class ScorchedEarthGame {
                     // Create explosion at player's position
                     createExplosion(player.position)
 
-                    // Remove the hit player from the players list
-                    val updatedPlayers = players.toMutableList()
-                    updatedPlayers.removeAt(index)
-                    players = updatedPlayers
+                    // Apply direct hit damage (100 health)
+                    applyDamageToPlayer(index, 100)
 
-                    // Adjust current player index if necessary
-                    if (currentPlayerIndex >= updatedPlayers.size) {
-                        currentPlayerIndex = 0
-                    } else if (index <= currentPlayerIndex && currentPlayerIndex > 0) {
-                        currentPlayerIndex--
-                    }
-
-                    // Check for game over condition
-                    if (updatedPlayers.size <= 1) {
-                        gameState = GameState.GAME_OVER
-                    } else {
-                        endProjectileFlight()
-                    }
+                    endProjectileFlight()
                     return@let
                 }
             }
         }
+    }
+
+    /**
+     * Applies damage to a player and removes them if health reaches 0.
+     * @param playerIndex The index of the player to damage
+     * @param damage The amount of damage to apply
+     */
+    private fun applyDamageToPlayer(playerIndex: Int, damage: Int) {
+        val updatedPlayers = players.toMutableList()
+
+        // Check if the playerIndex is valid
+        if (playerIndex < 0 || playerIndex >= updatedPlayers.size) {
+            return // Skip if index is out of bounds
+        }
+
+        val player = updatedPlayers[playerIndex]
+
+        // Apply damage
+        val newHealth = (player.health - damage).coerceAtLeast(0)
+        updatedPlayers[playerIndex] = player.copy(health = newHealth)
+
+        // Check if player is eliminated
+        if (newHealth <= 0) {
+            // Remove the player from the list
+            updatedPlayers.removeAt(playerIndex)
+
+            // Adjust current player index if necessary
+            if (currentPlayerIndex >= updatedPlayers.size) {
+                currentPlayerIndex = 0
+            } else if (playerIndex <= currentPlayerIndex && currentPlayerIndex > 0) {
+                currentPlayerIndex--
+            }
+
+            // Check for game over condition
+            if (updatedPlayers.size <= 1) {
+                gameState = GameState.GAME_OVER
+            }
+        }
+
+        players = updatedPlayers
     }
     /**
      * Checks if a point is colliding with the terrain.
@@ -352,6 +378,42 @@ class ScorchedEarthGame {
         // Deform terrain if the explosion is colliding with it
         if (isCollidingWithTerrain(position)) {
             deformTerrain(position, explosionRadius)
+        }
+
+        // Check for players within blast radius and apply damage
+        applyBlastDamageToPlayers(position, explosionRadius)
+    }
+
+    /**
+     * Applies damage to players within the blast radius.
+     * Damage decreases with distance from explosion center.
+     * @param explosionPosition The center of the explosion
+     * @param blastRadius The radius of the explosion
+     */
+    private fun applyBlastDamageToPlayers(explosionPosition: Offset, blastRadius: Float) {
+        // Check each player
+        players.forEachIndexed { index, player ->
+            // Calculate distance from player to explosion
+            val distance = kotlin.math.sqrt(
+                (player.position.x - explosionPosition.x) * (player.position.x - explosionPosition.x) +
+                (player.position.y - explosionPosition.y) * (player.position.y - explosionPosition.y)
+            )
+
+            // Only apply damage if player is within blast radius
+            if (distance <= blastRadius) {
+                // Calculate damage based on distance (closer = more damage)
+                // Using a linear falloff: damage = maxDamage * (1 - distance/radius)
+                val distanceRatio = distance / blastRadius
+                val damageFactor = 1.0f - distanceRatio
+
+                // Maximum damage at center is 100, minimum at edge is 0
+                val damage = (100 * damageFactor).toInt()
+
+                // Apply damage if it's greater than 0
+                if (damage > 0) {
+                    applyDamageToPlayer(index, damage)
+                }
+            }
         }
     }
 

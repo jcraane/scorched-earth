@@ -206,6 +206,26 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
                     style = Stroke(width = 2f)
                 )
             }
+
+            // Draw player health
+            // Calculate health bar width based on health percentage
+            val maxHealthBarWidth = 30f
+            val healthPercentage = player.health / 100f
+            val healthBarWidth = maxHealthBarWidth * healthPercentage
+
+            // Draw health background (red)
+            drawRect(
+                color = Color.Red,
+                topLeft = Offset(player.position.x - maxHealthBarWidth / 2, player.position.y - 30f),
+                size = androidx.compose.ui.geometry.Size(maxHealthBarWidth, 5f)
+            )
+
+            // Draw health foreground (green)
+            drawRect(
+                color = Color.Green,
+                topLeft = Offset(player.position.x - maxHealthBarWidth / 2, player.position.y - 30f),
+                size = androidx.compose.ui.geometry.Size(healthBarWidth, 5f)
+            )
         }
 
         // Draw projectile if in flight
