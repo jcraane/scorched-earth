@@ -24,7 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RadialGradientShader
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -240,8 +244,22 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
 
         // Draw explosion if it exists
         game.explosion?.let { explosion ->
+            // Create radial gradient from light (hot) center to dark red outer
+            val gradientBrush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFFFFFF99), // Light yellow-white (hottest center)
+                    Color(0xFFFFCC00), // Bright yellow-orange
+                    Color(0xFFFF6600), // Orange
+                    Color(0xFFFF3300), // Red-orange
+                    Color(0xFFCC0000), // Dark red
+                    Color(0xFF990000)  // Very dark red (outer edge)
+                ),
+                center = explosion.position,
+                radius = explosion.currentRadius
+            )
+
             drawCircle(
-                color = Color.Red,
+                brush = gradientBrush,
                 radius = explosion.currentRadius,
                 center = explosion.position
             )
