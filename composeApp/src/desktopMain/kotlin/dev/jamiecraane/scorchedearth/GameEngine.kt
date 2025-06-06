@@ -115,6 +115,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     // Add missiles to inventory
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
                     inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
+                    inventory.addItem(ProjectileType.MIRV, 2)
                 }
             )
         }
@@ -373,6 +374,20 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 proj.position.y + newVelocity.y * deltaTime
             )
 
+            // Special handling for MIRV - check if it should split at apex
+            if (proj.type == ProjectileType.MIRV) {
+                // Check if MIRV has reached its apex (velocity.y becomes positive, meaning it's falling)
+                val wasRising = proj.velocity.y <= 0
+                val nowFalling = newVelocity.y > 0
+
+                if (wasRising && nowFalling) {
+                    // MIRV has reached its apex - split into sub-projectiles
+                    generateMIRVSubProjectiles(newPosition, proj, newVelocity)
+                    endProjectileFlight()
+                    return@let
+                }
+            }
+
             // Create a new projectile instance to trigger recomposition
             // Add current position to the trail and maintain max trail length
             val updatedTrail = (proj.trail + proj.position).takeLast(proj.maxTrailLength)
@@ -386,29 +401,44 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
             // Check for collision with boundaries
             if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
-                createExplosion(newPosition, projectile)
-                endProjectileFlight()
+                // For MIRV, don't explode on boundary collision - just remove it
+                if (proj.type == ProjectileType.MIRV) {
+                    endProjectileFlight()
+                } else {
+                    createExplosion(newPosition, projectile)
+                    endProjectileFlight()
+                }
                 return@let
             }
 
             // Check for collision with terrain
             if (isCollidingWithTerrain(newPosition)) {
-                createExplosion(newPosition, projectile)
-                endProjectileFlight()
+                // For MIRV, don't explode on terrain collision - just remove it
+                if (proj.type == ProjectileType.MIRV) {
+                    endProjectileFlight()
+                } else {
+                    createExplosion(newPosition, projectile)
+                    endProjectileFlight()
+                }
                 return@let
             }
 
             // Check for collision with players
             for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
-                    // Create explosion at player's position
-                    createExplosion(player.position, projectile)
+                    // For MIRV, don't explode on player collision - just remove it
+                    if (proj.type == ProjectileType.MIRV) {
+                        endProjectileFlight()
+                    } else {
+                        // Create explosion at player's position
+                        createExplosion(player.position, projectile)
 
-                    // Apply direct hit damage (use projectile's maxDamage for direct hit)
-                    val damage = projectile?.maxDamage ?: 100
-                    applyDamageToPlayer(index, damage)
+                        // Apply direct hit damage (use projectile's maxDamage for direct hit)
+                        val damage = projectile?.maxDamage ?: 100
+                        applyDamageToPlayer(index, damage)
 
-                    endProjectileFlight()
+                        endProjectileFlight()
+                    }
                     return@let
                 }
             }
@@ -753,6 +783,50 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     }
 
     /**
+     * Generates sub-projectiles from a MIRV at its highest point.
+     * @param position The position of the parent MIRV
+     * @param parentProjectile The parent MIRV projectile
+     * @param parentVelocity The velocity of the parent MIRV at split time
+     */
+    private fun generateMIRVSubProjectiles(position: Offset, parentProjectile: Projectile, parentVelocity: Offset) {
+        val numberOfSubProjectiles = 6 // Number of sub-projectiles
+        val newMiniBombs = mutableListOf<Projectile>()
+
+        // Calculate the spread angle for the sub-projectiles
+        val baseAngle = -90f // Straight down
+        val spreadAngle = 120f // Total spread angle
+        val angleStep = spreadAngle / (numberOfSubProjectiles - 1)
+
+        for (i in 0 until numberOfSubProjectiles) {
+            // Calculate angle for this sub-projectile
+            val angle = (baseAngle - spreadAngle/2 + i * angleStep) * PI.toFloat() / 180f
+
+            // Calculate velocity with a base speed
+            val speed = 200f + Random.nextFloat() * 100f
+            val velocity = Offset(
+                cos(angle) * speed,
+                sin(angle) * speed
+            )
+
+            // Create a sub-projectile with slightly reduced damage
+            val subProjectile = Projectile(
+                position = position.copy(), // Copy to avoid reference issues
+                velocity = velocity,
+                type = parentProjectile.type,
+                minDamage = parentProjectile.minDamage / 2,
+                maxDamage = parentProjectile.maxDamage / 2,
+                blastRadius = parentProjectile.blastRadius * 0.7f,
+                trail = listOf() // Start with empty trail
+            )
+
+            newMiniBombs.add(subProjectile)
+        }
+
+        // Add the new sub-projectiles to the existing ones
+        miniBombs = miniBombs + newMiniBombs
+    }
+
+    /**
      * Fires a projectile with the given angle and power.
      * @param angle Angle in degrees (0 = right, 90 = up)
      * @param power Power factor (0-100)
@@ -821,7 +895,8 @@ enum class ProjectileType(
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000),
-    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000)
+    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
+    MIRV("MIRV", 15, 40, 80f, 3500)
 }
 
 /**
