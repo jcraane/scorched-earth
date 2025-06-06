@@ -1,10 +1,11 @@
 - ✅mirv more damage when explodes into smaller bombs
-- fall damage
-- when tracer is fired, player can fire waepon after that or trace but then turn is over
-- shield
+- ✅when tracer is fired, player can fire waepon after that or trace but then turn is over
 - number of rounds
+- fall damage
+- shield
 - money earn scheme
   - player kills other player -> 2500
   - player deals damage: damage * 20
   - player wins round: 1000 * number of players (player who was before that player 1000 * number of players - 1 etc)
 - summary window between each round
+- Smooth out terrain. Use highs and valleys but terrain itself should be smooth

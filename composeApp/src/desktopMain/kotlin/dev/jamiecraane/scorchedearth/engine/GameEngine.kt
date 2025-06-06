@@ -51,6 +51,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     // Current player index
     var currentPlayerIndex by mutableStateOf(0)
 
+    // Flag to track if the current player has already fired a tracer in this turn
+    private var hasPlayerFiredTracerThisTurn by mutableStateOf(false)
+
     // Environmental factors
     var wind by mutableStateOf(generateWind())
 
@@ -349,6 +352,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             // All projectiles and mini-bombs are gone, move to next player
             gameState = GameState.WAITING_FOR_PLAYER
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+            // Reset the tracer flag for the new player
+            hasPlayerFiredTracerThisTurn = false
+            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player")
         }
     }
 
@@ -1146,15 +1152,28 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
     /**
      * Ends the projectile flight and switches to the next player if no mini-bombs are in flight.
+     * For tracer projectiles, allows the player to fire again unless they've already fired a tracer this turn.
      */
     private fun endProjectileFlight() {
+        val wasTracer = projectile?.type == ProjectileType.TRACER
         projectile = null
 
         // Only end the turn if there are no mini-bombs in flight
         if (miniBombs.isEmpty()) {
             gameState = GameState.WAITING_FOR_PLAYER
-            // Switch to next player
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+
+            // For tracers, handle turn transition differently
+            if (wasTracer && !hasPlayerFiredTracerThisTurn) {
+                // First tracer fired this turn - allow player to fire again
+                hasPlayerFiredTracerThisTurn = true
+                println("[DEBUG_LOG] Tracer fired, player can fire again")
+            } else {
+                // Not a tracer or player has already fired a tracer - switch to next player
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+                // Reset the tracer flag for the new player
+                hasPlayerFiredTracerThisTurn = false
+                println("[DEBUG_LOG] Turn ended, switching to next player")
+            }
         } else {
             // Keep the game state as PROJECTILE_IN_FLIGHT while mini-bombs are active
             gameState = GameState.PROJECTILE_IN_FLIGHT
@@ -1264,6 +1283,16 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         if (!player.inventory.hasItem(player.selectedProjectileType)) {
             println("[DEBUG_LOG] Fire failed: No ${player.selectedProjectileType.displayName} in inventory")
             return false
+        }
+
+        // If firing a non-tracer projectile, reset the tracer flag
+        // This ensures that if a player fires a tracer after a non-tracer in the same turn,
+        // it's treated as the first tracer of the turn
+        if (player.selectedProjectileType != ProjectileType.TRACER) {
+            hasPlayerFiredTracerThisTurn = false
+            println("[DEBUG_LOG] Firing non-tracer projectile, resetting tracer flag")
+        } else {
+            println("[DEBUG_LOG] Firing tracer projectile, tracer already fired this turn: $hasPlayerFiredTracerThisTurn")
         }
 
         // Remove one projectile from inventory
