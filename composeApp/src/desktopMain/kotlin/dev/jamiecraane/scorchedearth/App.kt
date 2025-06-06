@@ -217,6 +217,15 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
             )
         }
 
+        // Draw explosion if it exists
+        game.explosion?.let { explosion ->
+            drawCircle(
+                color = Color.Red,
+                radius = explosion.radius,
+                center = explosion.position
+            )
+        }
+
         // Draw wind indicator
         val windIndicatorX = size.width / 2
         val windIndicatorY = 50f

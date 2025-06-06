@@ -21,6 +21,9 @@ class ScorchedEarthGame {
     // Game state
     var gameState by mutableStateOf(GameState.WAITING_FOR_PLAYER)
 
+    // Terrain height data for collision detection
+    var terrainHeights by mutableStateOf<Map<Float, Float>>(mapOf())
+
     // Terrain data
     var terrain by mutableStateOf(generateTerrain(gameWidth, gameHeight))
 
@@ -36,6 +39,9 @@ class ScorchedEarthGame {
     // Projectile state
     var projectile by mutableStateOf<Projectile?>(null)
 
+    // Explosion state
+    var explosion by mutableStateOf<Explosion?>(null)
+
     /**
      * Updates the game dimensions and regenerates content accordingly.
      * Call this when the window/canvas size changes.
@@ -45,10 +51,14 @@ class ScorchedEarthGame {
         gameHeight = height
         terrain = generateTerrain(width, height)
         players = generatePlayers(width, height)
-        // Reset projectile if it exists to prevent out-of-bounds issues
+        // Reset projectile and explosion if they exist to prevent out-of-bounds issues
         if (projectile != null) {
             projectile = null
             gameState = GameState.WAITING_FOR_PLAYER
+        }
+        // Reset explosion if it exists
+        if (explosion != null) {
+            explosion = null
         }
     }
 
@@ -89,20 +99,29 @@ class ScorchedEarthGame {
         val segments = 100
         val segmentWidth = width / segments
 
+        // Create a map to store terrain heights
+        val heights = mutableMapOf<Float, Float>()
+
         // Start at the left edge
+        val startY = baseHeight + Random.nextFloat() * 50f
         path.moveTo(0f, height)
-        path.lineTo(0f, baseHeight + Random.nextFloat() * 50f)
+        path.lineTo(0f, startY)
+        heights[0f] = startY
 
         // Generate terrain points
         for (i in 1..segments) {
             val x = i * segmentWidth
             val y = baseHeight + sin(i * 0.1).toFloat() * 50f + Random.nextFloat() * 30f
             path.lineTo(x, y)
+            heights[x] = y
         }
 
         // Close the path at the bottom
         path.lineTo(width, height)
         path.close()
+
+        // Store the terrain heights for collision detection
+        terrainHeights = heights
 
         return path
     }
@@ -115,6 +134,26 @@ class ScorchedEarthGame {
         when (gameState) {
             GameState.PROJECTILE_IN_FLIGHT -> updateProjectile(deltaTime)
             else -> {} // No updates needed for other states
+        }
+
+        // Update explosion if it exists
+        updateExplosion(deltaTime)
+    }
+
+    /**
+     * Updates the explosion animation.
+     * @param deltaTime Time elapsed since the last update in seconds
+     */
+    private fun updateExplosion(deltaTime: Float) {
+        explosion?.let { exp ->
+            val newTimeRemaining = exp.timeRemaining - deltaTime
+            if (newTimeRemaining <= 0) {
+                // Explosion is finished
+                explosion = null
+            } else {
+                // Update explosion time remaining
+                explosion = exp.copy(timeRemaining = newTimeRemaining)
+            }
         }
     }
 
@@ -143,14 +182,99 @@ class ScorchedEarthGame {
                 velocity = newVelocity
             )
 
-            // Check for collision with terrain or boundaries using current game dimensions
+            // Check for collision with boundaries
             if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
-                projectile = null
-                gameState = GameState.WAITING_FOR_PLAYER
-                // Switch to next player
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+                createExplosion(newPosition)
+                endProjectileFlight()
+                return@let
+            }
+
+            // Check for collision with terrain
+            if (isCollidingWithTerrain(newPosition)) {
+                createExplosion(newPosition)
+                endProjectileFlight()
+                return@let
+            }
+
+            // Check for collision with players
+            for (player in players) {
+                if (isCollidingWithPlayer(newPosition, player)) {
+                    createExplosion(newPosition)
+                    endProjectileFlight()
+                    return@let
+                }
             }
         }
+    }
+
+    /**
+     * Checks if a point is colliding with the terrain.
+     * @param position The position to check
+     * @return True if the position is below the terrain surface
+     */
+    private fun isCollidingWithTerrain(position: Offset): Boolean {
+        // Find the closest x-coordinates in our terrain height map
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        // If position is outside the terrain bounds, no collision
+        if (position.x < terrainXCoords.first() || position.x > terrainXCoords.last()) {
+            return false
+        }
+
+        // Find the two closest x-coordinates
+        val lowerX = terrainXCoords.filter { it <= position.x }.maxOrNull() ?: return false
+        val upperX = terrainXCoords.filter { it >= position.x }.minOrNull() ?: return false
+
+        // Get the heights at those coordinates
+        val lowerY = terrainHeights[lowerX] ?: return false
+        val upperY = terrainHeights[upperX] ?: return false
+
+        // Interpolate to find the terrain height at the exact x-coordinate
+        val terrainHeight = if (upperX == lowerX) {
+            lowerY
+        } else {
+            lowerY + (upperY - lowerY) * (position.x - lowerX) / (upperX - lowerX)
+        }
+
+        // Check if the position is below the terrain surface
+        return position.y >= terrainHeight
+    }
+
+    /**
+     * Checks if a point is colliding with a player.
+     * @param position The position to check
+     * @param player The player to check collision with
+     * @return True if the position is within the player's collision radius
+     */
+    private fun isCollidingWithPlayer(position: Offset, player: Player): Boolean {
+        val playerRadius = 15f // Same as the radius used for drawing
+        val distance = kotlin.math.sqrt(
+            (position.x - player.position.x) * (position.x - player.position.x) +
+            (position.y - player.position.y) * (position.y - player.position.y)
+        )
+        return distance <= playerRadius
+    }
+
+    /**
+     * Creates an explosion at the specified position.
+     * @param position The position of the explosion
+     */
+    private fun createExplosion(position: Offset) {
+        explosion = Explosion(
+            position = position,
+            radius = 30f, // Reasonable radius as mentioned in the requirements
+            timeRemaining = 0.5f // Half a second duration
+        )
+    }
+
+    /**
+     * Ends the projectile flight and switches to the next player.
+     */
+    private fun endProjectileFlight() {
+        projectile = null
+        gameState = GameState.WAITING_FOR_PLAYER
+        // Switch to next player
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size
     }
 
     /**
@@ -209,4 +333,13 @@ data class Player(
 data class Projectile(
     val position: Offset,
     val velocity: Offset
+)
+
+/**
+ * Represents an explosion when a projectile hits something.
+ */
+data class Explosion(
+    val position: Offset,
+    val radius: Float,
+    val timeRemaining: Float
 )
