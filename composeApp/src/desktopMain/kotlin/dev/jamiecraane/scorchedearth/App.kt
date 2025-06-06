@@ -50,7 +50,3 @@ private fun DrawScope.drawGame(game: ScorchedEarthGame) {
     )
 }
 
-// Game state class
-class ScorchedEarthGame {
-    // Game state will be implemented in Phase 2
-}
