@@ -51,6 +51,8 @@ class ScorchedEarthGame {
         gameHeight = height
         terrain = generateTerrain(width, height)
         players = generatePlayers(width, height)
+        // Update player positions to stick to the terrain
+        updatePlayerPositions()
         // Reset projectile and explosion if they exist to prevent out-of-bounds issues
         if (projectile != null) {
             projectile = null
@@ -138,6 +140,57 @@ class ScorchedEarthGame {
 
         // Update explosion if it exists
         updateExplosion(deltaTime)
+    }
+
+    /**
+     * Updates player positions to match the terrain height at their x-coordinates.
+     * This ensures players always sit on top of the terrain.
+     */
+    private fun updatePlayerPositions() {
+        val updatedPlayers = players.map { player ->
+            // Find the terrain height at the player's x-coordinate
+            val terrainHeight = getTerrainHeightAtX(player.position.x)
+
+            // Create a new player with updated y-position
+            // Subtract a small offset to place the player visibly on top of the terrain
+            player.copy(position = Offset(player.position.x, terrainHeight - 15f))
+        }
+
+        players = updatedPlayers
+    }
+
+    /**
+     * Gets the terrain height at a specific x-coordinate using interpolation.
+     * @param x The x-coordinate to get the height for
+     * @return The interpolated height at the given x-coordinate
+     */
+    private fun getTerrainHeightAtX(x: Float): Float {
+        // Find the closest x-coordinates in our terrain height map
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        // If position is outside the terrain bounds, return a default value
+        if (x < terrainXCoords.first()) {
+            return terrainHeights[terrainXCoords.first()] ?: (gameHeight * 0.7f)
+        }
+
+        if (x > terrainXCoords.last()) {
+            return terrainHeights[terrainXCoords.last()] ?: (gameHeight * 0.7f)
+        }
+
+        // Find the two closest x-coordinates
+        val lowerX = terrainXCoords.filter { it <= x }.maxOrNull() ?: return gameHeight * 0.7f
+        val upperX = terrainXCoords.filter { it >= x }.minOrNull() ?: return gameHeight * 0.7f
+
+        // Get the heights at those coordinates
+        val lowerY = terrainHeights[lowerX] ?: return gameHeight * 0.7f
+        val upperY = terrainHeights[upperX] ?: return gameHeight * 0.7f
+
+        // Interpolate to find the terrain height at the exact x-coordinate
+        return if (upperX == lowerX) {
+            lowerY
+        } else {
+            lowerY + (upperY - lowerY) * (x - lowerX) / (upperX - lowerX)
+        }
     }
 
     /**
@@ -325,6 +378,9 @@ class ScorchedEarthGame {
 
         // Regenerate the terrain path with the new heights
         terrain = regenerateTerrainPath(gameWidth, gameHeight)
+
+        // Update player positions to stick to the terrain
+        updatePlayerPositions()
     }
 
     /**
