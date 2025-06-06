@@ -87,7 +87,9 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Player: ${game.currentPlayerIndex + 1}", color = Color.White)
+                val currentPlayer = game.players[game.currentPlayerIndex]
+                val playerName = if (currentPlayer.name.isNotEmpty()) currentPlayer.name else "Player ${game.currentPlayerIndex + 1}"
+                Text("Player: $playerName", color = Color.White)
                 Text("Wind: ${game.wind.toInt()} mph", color = Color.White)
             }
 

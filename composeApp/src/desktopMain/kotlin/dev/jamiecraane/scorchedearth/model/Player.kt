@@ -11,6 +11,7 @@ import dev.jamiecraane.scorchedearth.inventory.Inventory
 data class Player(
     val position: Offset,
     val color: Color,
+    var name: String = "",
     var health: Int = 100,
     var angle: Float = 0f,
     var power: Float = 50f,
