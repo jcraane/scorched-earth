@@ -85,7 +85,12 @@ fun App() {
             }
 
             // Game UI
-            GameUI(game, canvasSize, cpuController)
+            GameUI(
+                game = game,
+                initialCanvasSize = canvasSize,
+                cpuController = cpuController,
+                onBackToIntro = { currentScreen = Screen.INTRO }
+            )
         }
     }
 }

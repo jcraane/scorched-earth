@@ -1,7 +1,6 @@
 package dev.jamiecraane.scorchedearth
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -30,6 +30,7 @@ import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.inventory.InventoryButton
 import dev.jamiecraane.scorchedearth.inventory.InventoryPopup
 import kotlinx.coroutines.delay
+
 // No need to import components from the same package
 
 /**
@@ -38,12 +39,14 @@ import kotlinx.coroutines.delay
  * @param game The game engine instance
  * @param initialCanvasSize The initial size of the canvas
  * @param cpuController Optional CPU player controller for handling AI turns
+ * @param onBackToIntro Callback to navigate back to the intro screen
  */
 @Composable
 fun GameUI(
     game: ScorchedEarthGame,
     initialCanvasSize: androidx.compose.ui.geometry.Size,
-    cpuController: dev.jamiecraane.scorchedearth.engine.CPUPlayerController? = null
+    cpuController: dev.jamiecraane.scorchedearth.engine.CPUPlayerController? = null,
+    onBackToIntro: () -> Unit = {},
 ) {
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(initialCanvasSize) }
@@ -61,13 +64,19 @@ fun GameUI(
             // Handle CPU player turns
             if (game.gameState == GameState.AIMING &&
                 game.players.isNotEmpty() &&
-                game.currentPlayerIndex < game.players.size) {
+                game.currentPlayerIndex < game.players.size
+            ) {
 
                 val currentPlayer = game.players[game.currentPlayerIndex]
 
                 // Check if current player is CPU and we have a CPU controller
                 if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU && cpuController != null) {
-                    println("[DEBUG_LOG] CPU player turn: ${currentPlayer.name}, Inventory: ${currentPlayer.inventory.getAllItems().joinToString { "${it.type.displayName}(${it.quantity})" }}")
+                    println(
+                        "[DEBUG_LOG] CPU player turn: ${currentPlayer.name}, Inventory: ${
+                            currentPlayer.inventory.getAllItems()
+                                .joinToString { "${it.type.displayName}(${it.quantity})" }
+                        }"
+                    )
 
                     // Make CPU decision
                     if (cpuController.makeDecision(currentPlayer)) {
@@ -96,13 +105,15 @@ fun GameUI(
         }
     }
 
+    // State for confirmation dialog
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+
     // Main game container
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
-
-        // Game canvas where all rendering happens
+        // Game canvas where all rendering happens - placed first so it's at the bottom layer
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Only update dimensions when canvas size actually changes
             if (canvasSize != size) {
@@ -112,6 +123,39 @@ fun GameUI(
 
             // Draw the game elements
             drawGame(game)
+        }
+
+        Button(
+            onClick = { showConfirmationDialog = true },
+            modifier = Modifier.padding(4.dp)
+        ) {
+            Text("Back")
+        }
+
+        // Back button confirmation dialog
+        if (showConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmationDialog = false },
+                title = { Text("Return to Main Menu") },
+                text = { Text("Are you sure you want to return to the main menu? Your current game progress will be lost.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showConfirmationDialog = false
+                            onBackToIntro()
+                        }
+                    ) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showConfirmationDialog = false }
+                    ) {
+                        Text("No")
+                    }
+                }
+            )
         }
 
         // UI controls
@@ -127,7 +171,8 @@ fun GameUI(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 val currentPlayer = game.players[game.currentPlayerIndex]
-                val playerName = if (currentPlayer.name.isNotEmpty()) currentPlayer.name else "Player ${game.currentPlayerIndex + 1}"
+                val playerName =
+                    if (currentPlayer.name.isNotEmpty()) currentPlayer.name else "Player ${game.currentPlayerIndex + 1}"
                 Text("Player: $playerName", color = Color.White)
 
                 Text("Wind: ${game.wind.toInt()} mph", color = Color.White)
@@ -140,9 +185,11 @@ fun GameUI(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Angle: ${game.players[game.currentPlayerIndex].angle.toInt()}° (0=right)",
+                Text(
+                    "Angle: ${game.players[game.currentPlayerIndex].angle.toInt()}° (0=right)",
                     modifier = Modifier.width(150.dp),
-                    color = Color.White)
+                    color = Color.White
+                )
                 Slider(
                     value = game.players[game.currentPlayerIndex].angle,
                     onValueChange = {
@@ -160,9 +207,11 @@ fun GameUI(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Power: ${game.players[game.currentPlayerIndex].power.toInt()}",
+                Text(
+                    "Power: ${game.players[game.currentPlayerIndex].power.toInt()}",
                     modifier = Modifier.width(100.dp),
-                    color = Color.White)
+                    color = Color.White
+                )
                 Slider(
                     value = game.players[game.currentPlayerIndex].power,
                     onValueChange = {
@@ -185,9 +234,11 @@ fun GameUI(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Inventory: ",
+                Text(
+                    "Inventory: ",
                     modifier = Modifier.width(100.dp),
-                    color = Color.White)
+                    color = Color.White
+                )
 
                 // Button to show current missile and open popup
                 InventoryButton(
