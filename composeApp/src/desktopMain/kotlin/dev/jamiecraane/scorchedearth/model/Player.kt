@@ -24,7 +24,7 @@ data class Player(
     var angle: Float = 0f,
     var power: Float = 50f,
     var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
-    var money: Int = 1000,
+    var money: Int = 10000,
     val inventory: Inventory = Inventory(),
     var type: PlayerType = PlayerType.HUMAN
 )
