@@ -18,14 +18,25 @@ class CPUPlayerController(private val game: ScorchedEarthGame) {
      * @return True if a decision was made successfully
      */
     fun makeDecision(player: Player): Boolean {
+        println("[DEBUG_LOG] CPU making decision for player: ${player.name}")
+
         // Find the nearest opponent to target
-        val target = findNearestOpponent(player) ?: return false
+        val target = findNearestOpponent(player)
+
+        if (target == null) {
+            println("[DEBUG_LOG] CPU couldn't find a target")
+            return false
+        }
+
+        println("[DEBUG_LOG] CPU found target: ${target.name} at position ${target.position}")
 
         // Calculate angle and power to hit the target
         val (angle, power) = calculateShotParameters(player, target)
+        println("[DEBUG_LOG] CPU calculated parameters: angle=$angle, power=$power")
 
         // Update the player's angle and power
         updatePlayerParameters(player, angle, power)
+        println("[DEBUG_LOG] CPU selected projectile: ${player.selectedProjectileType.displayName}")
 
         return true
     }

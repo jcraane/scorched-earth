@@ -67,14 +67,21 @@ fun GameUI(
 
                 // Check if current player is CPU and we have a CPU controller
                 if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU && cpuController != null) {
+                    println("[DEBUG_LOG] CPU player turn: ${currentPlayer.name}, Inventory: ${currentPlayer.inventory.getAllItems().joinToString { "${it.type.displayName}(${it.quantity})" }}")
+
                     // Make CPU decision
                     if (cpuController.makeDecision(currentPlayer)) {
+                        println("[DEBUG_LOG] CPU decision made: angle=${currentPlayer.angle}, power=${currentPlayer.power}, projectile=${currentPlayer.selectedProjectileType.displayName}")
+
                         // Add a small delay to make CPU turns visible
                         delay(500)
 
                         // Fire projectile with CPU-determined angle and power
-                        game.fireProjectile(currentPlayer.angle, currentPlayer.power)
+                        val success = game.fireProjectile(currentPlayer.angle, currentPlayer.power)
+                        println("[DEBUG_LOG] CPU fire result: $success")
                     } else {
+                        println("[DEBUG_LOG] CPU couldn't make a decision, skipping turn")
+
                         // If CPU couldn't make a decision (e.g., no valid targets), skip turn
                         game.gameState = GameState.WAITING_FOR_PLAYER
                         game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.size

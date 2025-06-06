@@ -66,16 +66,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         gameHeight = height
         terrain = generateTerrain(width, height)
 
-        // Store player names before regenerating players
+        // Store player names and types before regenerating players
         val playerNames = players.map { it.name }
+        val playerTypes = players.map { it.type }
 
         // Regenerate players
         players = generatePlayers(width, height, numberOfPlayers)
 
-        // Restore player names
+        // Restore player names and types
         players.forEachIndexed { index, player ->
             if (index < playerNames.size) {
                 player.name = playerNames[index]
+                player.type = playerTypes[index]
             }
         }
 
@@ -204,6 +206,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 // Check if current player is CPU
                 val currentPlayer = players[currentPlayerIndex]
                 if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU) {
+                    println("[DEBUG_LOG] Detected CPU player's turn: ${currentPlayer.name}, transitioning to AIMING state")
                     // CPU player's turn - set game state to AIMING to prevent multiple shots
                     gameState = GameState.AIMING
                 }
@@ -961,8 +964,12 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     fun fireProjectile(angle: Float, power: Float): Boolean {
         val player = players[currentPlayerIndex]
 
+        println("[DEBUG_LOG] Attempting to fire projectile: player=${player.name}, type=${player.type}, projectile=${player.selectedProjectileType.displayName}")
+        println("[DEBUG_LOG] Player inventory: ${player.inventory.getAllItems().joinToString { "${it.type.displayName}(${it.quantity})" }}")
+
         // Check if player has the selected projectile type in inventory
         if (!player.inventory.hasItem(player.selectedProjectileType)) {
+            println("[DEBUG_LOG] Fire failed: No ${player.selectedProjectileType.displayName} in inventory")
             return false
         }
 
