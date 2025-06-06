@@ -178,7 +178,9 @@ fun App() {
 
             // Missile type selection
             var showMissilePopup by remember { mutableStateOf(false) }
-            val currentMissile = game.players[game.currentPlayerIndex].selectedProjectileType
+            val currentPlayer = game.players[game.currentPlayerIndex]
+            val currentMissile = currentPlayer.selectedProjectileType
+            val currentMissileQuantity = currentPlayer.inventory.getItemQuantity(currentMissile)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -203,11 +205,18 @@ fun App() {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = "${currentMissile.displayName} (Damage: ${currentMissile.minDamage}-${currentMissile.maxDamage})",
                             color = Color.White
+                        )
+
+                        // Display quantity
+                        Text(
+                            text = "Qty: $currentMissileQuantity",
+                            color = if (currentMissileQuantity > 0) Color.White else Color.Red
                         )
                     }
                 }
@@ -243,16 +252,23 @@ fun App() {
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     items(ProjectileType.values()) { projectileType ->
+                                        val currentPlayer = game.players[game.currentPlayerIndex]
+                                        val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
+
                                         MissileItem(
                                             projectileType = projectileType,
-                                            isSelected = game.players[game.currentPlayerIndex].selectedProjectileType == projectileType,
+                                            isSelected = currentPlayer.selectedProjectileType == projectileType,
+                                            quantity = quantity,
                                             onClick = {
-                                                val players = game.players.toMutableList()
-                                                players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
-                                                    selectedProjectileType = projectileType
-                                                )
-                                                game.players = players
-                                                showMissilePopup = false
+                                                // Only allow selection if player has this missile type
+                                                if (quantity > 0) {
+                                                    val players = game.players.toMutableList()
+                                                    players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
+                                                        selectedProjectileType = projectileType
+                                                    )
+                                                    game.players = players
+                                                    showMissilePopup = false
+                                                }
                                             }
                                         )
                                     }
@@ -266,15 +282,35 @@ fun App() {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Fire button
+            var showNoMissilesMessage by remember { mutableStateOf(false) }
+
             Button(
                 onClick = {
                     val player = game.players[game.currentPlayerIndex]
-                    game.fireProjectile(player.angle, player.power)
+                    val success = game.fireProjectile(player.angle, player.power)
+                    if (!success) {
+                        showNoMissilesMessage = true
+                    }
                 },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 enabled = game.gameState == GameState.WAITING_FOR_PLAYER
             ) {
                 Text("FIRE!")
+            }
+
+            // Show message if player doesn't have the selected missile
+            if (showNoMissilesMessage) {
+                Text(
+                    text = "No ${game.players[game.currentPlayerIndex].selectedProjectileType.displayName} missiles left!",
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp)
+                )
+
+                // Hide the message after a delay
+                LaunchedEffect(showNoMissilesMessage) {
+                    delay(2000)
+                    showNoMissilesMessage = false
+                }
             }
         }
     }
@@ -287,6 +323,7 @@ fun App() {
 private fun MissileItem(
     projectileType: ProjectileType,
     isSelected: Boolean,
+    quantity: Int = 0,
     onClick: () -> Unit
 ) {
     Card(
@@ -331,6 +368,13 @@ private fun MissileItem(
             Text(
                 text = "Damage: ${projectileType.minDamage}-${projectileType.maxDamage}",
                 color = Color.LightGray,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+
+            // Quantity
+            Text(
+                text = "Qty: $quantity",
+                color = if (quantity > 0) Color.White else Color.Red,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }

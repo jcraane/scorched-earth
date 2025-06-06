@@ -73,11 +73,17 @@ class ScorchedEarthGame {
             Player(
                 position = Offset(width * 0.1f, baseY), // 10% from left edge
                 color = androidx.compose.ui.graphics.Color.Red
-            ),
+            ).apply {
+                // Add 10 baby missiles to inventory
+                inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+            },
             Player(
                 position = Offset(width * 0.9f, baseY), // 10% from right edge
                 color = androidx.compose.ui.graphics.Color.Blue
-            )
+            ).apply {
+                // Add 10 baby missiles to inventory
+                inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+            }
         )
     }
 
@@ -529,9 +535,19 @@ class ScorchedEarthGame {
      * Fires a projectile with the given angle and power.
      * @param angle Angle in degrees (0 = right, 90 = up)
      * @param power Power factor (0-100)
+     * @return True if the projectile was fired successfully, false otherwise
      */
-    fun fireProjectile(angle: Float, power: Float) {
+    fun fireProjectile(angle: Float, power: Float): Boolean {
         val player = players[currentPlayerIndex]
+
+        // Check if player has the selected projectile type in inventory
+        if (!player.inventory.hasItem(player.selectedProjectileType)) {
+            return false
+        }
+
+        // Remove one projectile from inventory
+        player.inventory.removeItem(player.selectedProjectileType, 1)
+
         val angleRadians = angle * PI.toFloat() / 180f
 
         // Determine direction multiplier based on player
@@ -552,6 +568,7 @@ class ScorchedEarthGame {
         )
 
         gameState = GameState.PROJECTILE_IN_FLIGHT
+        return true
     }
 }
 
@@ -591,7 +608,8 @@ data class Player(
     var angle: Float = 45f,
     var power: Float = 50f,
     var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
-    var money: Int = 5000
+    var money: Int = 5000,
+    val inventory: Inventory = Inventory()
 )
 
 /**
