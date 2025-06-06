@@ -590,7 +590,8 @@ data class Player(
     var health: Int = 100,
     var angle: Float = 45f,
     var power: Float = 50f,
-    var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE
+    var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
+    var money: Int = 5000
 )
 
 /**

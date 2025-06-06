@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.cos
@@ -81,6 +82,30 @@ fun App() {
             .fillMaxSize()
             .background(Color(0xFF87CEEB)) // Sky blue background
     ) {
+        // Display money for left player (upper left corner)
+        if (game.players.isNotEmpty()) {
+            Text(
+                text = "$${game.players[0].money}",
+                color = Color.White,
+                fontSize = 32.sp,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+            )
+
+            // Display money for right player (upper right corner)
+            if (game.players.size > 1) {
+                Text(
+                    text = "$${game.players[1].money}",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                )
+            }
+        }
+
         // Game canvas where all rendering happens
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Only update dimensions when canvas size actually changes
@@ -159,7 +184,7 @@ fun App() {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Missile: ",
+                Text("Inventory: ",
                     modifier = Modifier.width(100.dp),
                     color = Color.White)
 
@@ -207,7 +232,7 @@ fun App() {
                                 modifier = Modifier.padding(16.dp)
                             ) {
                                 Text(
-                                    text = "Select Missile",
+                                    text = "Select Item",
                                     color = Color.White,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
