@@ -13,7 +13,7 @@ import kotlin.random.Random
 /**
  * Main game engine class that manages the game state and logic.
  */
-class ScorchedEarthGame {
+class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     // Game dimensions - these will be updated when the canvas size changes
     var gameWidth by mutableStateOf(1600f)
     var gameHeight by mutableStateOf(1200f)
@@ -28,7 +28,7 @@ class ScorchedEarthGame {
     var terrain by mutableStateOf(generateTerrain(gameWidth, gameHeight))
 
     // Players
-    var players by mutableStateOf(generatePlayers(gameWidth, gameHeight))
+    var players by mutableStateOf(generatePlayers(gameWidth, gameHeight, numberOfPlayers))
 
     // Current player index
     var currentPlayerIndex by mutableStateOf(0)
@@ -53,7 +53,7 @@ class ScorchedEarthGame {
         gameWidth = width
         gameHeight = height
         terrain = generateTerrain(width, height)
-        players = generatePlayers(width, height)
+        players = generatePlayers(width, height, numberOfPlayers)
         // Update player positions to stick to the terrain
         updatePlayerPositions()
         // Reset projectile and explosion if they exist to prevent out-of-bounds issues
@@ -74,27 +74,52 @@ class ScorchedEarthGame {
 
     /**
      * Generates players with positions scaled to the current game dimensions.
+     * @param width Width of the game area
+     * @param height Height of the game area
+     * @param numberOfPlayers Number of players to generate (2-10)
+     * @return List of players
      */
-    private fun generatePlayers(width: Float, height: Float): List<Player> {
+    private fun generatePlayers(width: Float, height: Float, numberOfPlayers: Int = 2): List<Player> {
         val baseY = height * 0.7f - 20f
-        return listOf(
-            Player(
-                position = Offset(width * 0.1f, baseY), // 10% from left edge
-                color = androidx.compose.ui.graphics.Color.Red
-            ).apply {
-                // Add missiles to inventory
-                inventory.addItem(ProjectileType.BABY_MISSILE, 10)
-                inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
-            },
-            Player(
-                position = Offset(width * 0.9f, baseY), // 10% from right edge
-                color = androidx.compose.ui.graphics.Color.Blue
-            ).apply {
-                // Add missiles to inventory
-                inventory.addItem(ProjectileType.BABY_MISSILE, 10)
-                inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
-            }
+        val players = mutableListOf<Player>()
+
+        // Ensure number of players is within valid range
+        val validNumberOfPlayers = numberOfPlayers.coerceIn(2, 10)
+
+        // Generate colors for players
+        val colors = listOf(
+            androidx.compose.ui.graphics.Color.Red,
+            androidx.compose.ui.graphics.Color.Blue,
+            androidx.compose.ui.graphics.Color.Green,
+            androidx.compose.ui.graphics.Color.Yellow,
+            androidx.compose.ui.graphics.Color.Magenta,
+            androidx.compose.ui.graphics.Color.Cyan,
+            androidx.compose.ui.graphics.Color.White,
+            androidx.compose.ui.graphics.Color(0xFFFF8000), // Orange
+            androidx.compose.ui.graphics.Color(0xFF800080), // Purple
+            androidx.compose.ui.graphics.Color(0xFF008080)  // Teal
         )
+
+        // Calculate positions evenly distributed across the width
+        for (i in 0 until validNumberOfPlayers) {
+            // Calculate position based on player index
+            // For 2 players: 10% and 90% of width
+            // For more players: evenly distributed
+            val xPosition = width * (0.1f + 0.8f * i.toFloat() / (validNumberOfPlayers - 1))
+
+            players.add(
+                Player(
+                    position = Offset(xPosition, baseY),
+                    color = colors[i % colors.size]
+                ).apply {
+                    // Add missiles to inventory
+                    inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+                    inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
+                }
+            )
+        }
+
+        return players
     }
 
     /**
@@ -746,10 +771,12 @@ class ScorchedEarthGame {
 
         val angleRadians = angle * PI.toFloat() / 180f
 
-        // Determine direction multiplier based on player
-        // Player 0 (red, left side) fires right (positive direction)
-        // Player 1 (blue, right side) fires left (negative direction)
-        val directionMultiplier = if (currentPlayerIndex == 0) 1f else -1f
+        // Determine direction multiplier based on player position
+        // Players on the left half of the screen fire right (positive direction)
+        // Players on the right half of the screen fire left (negative direction)
+        val playerX = player.position.x
+        val screenMidpoint = gameWidth / 2
+        val directionMultiplier = if (playerX < screenMidpoint) 1f else -1f
 
         val powerMultiplieFactor = 12f
         val velocity = Offset(

@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -54,11 +55,36 @@ import kotlin.math.sin
 @Composable
 @Preview
 fun App() {
-    // Create a game instance to manage state
-    val game = remember { ScorchedEarthGame() }
+    // State to track whether the game has started
+    var gameStarted by remember { mutableStateOf(false) }
+
+    // State to track the number of players
+    var numberOfPlayers by remember { mutableStateOf(2) }
 
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+
+    // Show intro screen if game hasn't started
+    if (!gameStarted) {
+        IntroScreen(
+            onStartGame = { players ->
+                numberOfPlayers = players
+                gameStarted = true
+            }
+        )
+    } else {
+        // Game is started, create the game instance
+        val game = remember(numberOfPlayers) { ScorchedEarthGame(numberOfPlayers) }
+
+        // Game UI
+        GameUI(game, canvasSize)
+    }
+}
+
+@Composable
+private fun GameUI(game: ScorchedEarthGame, initialCanvasSize: Size) {
+    // Track canvas size to detect changes
+    var canvasSize by remember { mutableStateOf(initialCanvasSize) }
 
     // Game loop using LaunchedEffect
     LaunchedEffect(Unit) {
