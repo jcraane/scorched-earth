@@ -138,6 +138,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     color = colors[i % colors.size]
                 ).apply {
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
+                    inventory.addItem(ProjectileType.LEAPFROG, 3)
                 }
             )
         }
@@ -433,6 +434,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 // For MIRV, don't explode on boundary collision - just remove it
                 if (proj.type == ProjectileType.MIRV) {
                     endProjectileFlight()
+                } else if (proj.type == ProjectileType.LEAPFROG && proj.bounceCount < proj.maxBounces) {
+                    // Leapfrog bounces off boundaries
+                    handleLeapfrogBounce(newPosition, proj, newVelocity, true)
                 } else {
                     createExplosion(newPosition, projectile)
                     endProjectileFlight()
@@ -445,6 +449,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 // For MIRV, don't explode on terrain collision - just remove it
                 if (proj.type == ProjectileType.MIRV) {
                     endProjectileFlight()
+                } else if (proj.type == ProjectileType.LEAPFROG && proj.bounceCount < proj.maxBounces) {
+                    // Leapfrog bounces off terrain
+                    handleLeapfrogBounce(newPosition, proj, newVelocity, false)
                 } else {
                     createExplosion(newPosition, projectile)
                     endProjectileFlight()
@@ -471,6 +478,60 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     return@let
                 }
             }
+        }
+    }
+
+    /**
+     * Handles the bouncing behavior of the Leapfrog projectile.
+     * @param position The current position of the projectile
+     * @param proj The current projectile
+     * @param velocity The current velocity of the projectile
+     * @param isBoundaryCollision True if the collision is with a boundary, false if with terrain
+     */
+    private fun handleLeapfrogBounce(position: Offset, proj: Projectile, velocity: Offset, isBoundaryCollision: Boolean) {
+        // Create a small explosion at the bounce point with reduced blast radius
+        val bounceExplosionProjectile = Projectile(
+            position = position,
+            velocity = velocity,
+            type = proj.type,
+            blastRadius = proj.blastRadius * 0.5f, // Half the normal blast radius
+            minDamage = proj.minDamage / 2, // Reduced damage for bounce explosions
+            maxDamage = proj.maxDamage / 2
+        )
+        createExplosion(position, bounceExplosionProjectile)
+
+        // Calculate new velocity based on collision type
+        val newVelocity = if (isBoundaryCollision) {
+            // Boundary collision - reflect based on which boundary was hit
+            when {
+                position.x <= 0 || position.x >= gameWidth -> Offset(-velocity.x * 0.8f, velocity.y * 0.8f) // X-boundary: reverse X velocity
+                else -> Offset(velocity.x * 0.8f, -velocity.y * 0.8f) // Y-boundary: reverse Y velocity
+            }
+        } else {
+            // Terrain collision - reflect upward with some randomness
+            val bounceAngle = -PI.toFloat() / 2 + (Random.nextFloat() - 0.5f) * PI.toFloat() / 4 // Mostly upward with some variation
+            val speed = sqrt(velocity.x * velocity.x + velocity.y * velocity.y) * 0.8f // Reduce speed by 20% each bounce
+
+            Offset(
+                cos(bounceAngle) * speed * (if (velocity.x > 0) 1f else -1f), // Maintain horizontal direction
+                sin(bounceAngle) * speed
+            )
+        }
+
+        // Create a new projectile with incremented bounce count
+        projectile = Projectile(
+            position = position,
+            velocity = newVelocity,
+            type = proj.type,
+            trail = proj.trail,
+            bounceCount = proj.bounceCount + 1,
+            maxBounces = proj.maxBounces
+        )
+
+        // If this was the last allowed bounce, create a final explosion
+        if (proj.bounceCount + 1 >= proj.maxBounces) {
+            createExplosion(position, projectile)
+            endProjectileFlight()
         }
     }
 
@@ -941,5 +1002,6 @@ enum class ProjectileType(
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000),
     FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
-    MIRV("MIRV", 15, 40, 80f, 3500)
+    MIRV("MIRV", 15, 40, 80f, 3500),
+    LEAPFROG("Leapfrog", 15, 35, 70f, 3000)
 }

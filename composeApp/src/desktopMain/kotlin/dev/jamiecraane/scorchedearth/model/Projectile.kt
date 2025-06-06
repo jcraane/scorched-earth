@@ -13,6 +13,8 @@ import dev.jamiecraane.scorchedearth.engine.ProjectileType
  * @param blastRadius Radius of the explosion when the projectile hits
  * @param trail List of previous positions to create a trail effect
  * @param maxTrailLength Maximum number of positions to keep in the trail
+ * @param bounceCount Number of times the projectile has bounced (for Leapfrog)
+ * @param maxBounces Maximum number of bounces allowed (for Leapfrog)
  */
 data class Projectile(
     val position: Offset,
@@ -22,5 +24,7 @@ data class Projectile(
     val maxDamage: Int = type.maxDamage,
     val blastRadius: Float = type.blastRadius,
     val trail: List<Offset> = listOf(),
-    val maxTrailLength: Int = 15
+    val maxTrailLength: Int = 15,
+    val bounceCount: Int = 0,
+    val maxBounces: Int = 5
 )

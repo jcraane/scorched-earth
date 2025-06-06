@@ -147,5 +147,6 @@ fun getMissileColor(projectileType: ProjectileType): Color {
         ProjectileType.NUCLEAR_BOMB -> Color(0xFFF44336)  // Red
         ProjectileType.FUNKY_BOMB -> Color(0xFF9C27B0)  // Purple
         ProjectileType.MIRV -> Color(0xFF9D50B0)
+        ProjectileType.LEAPFROG -> Color(0xFF00BCD4)  // Cyan
     }
 }
