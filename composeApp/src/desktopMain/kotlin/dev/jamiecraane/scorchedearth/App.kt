@@ -34,16 +34,20 @@ fun App() {
     // State to track the terrain variance
     var terrainVariance by remember { mutableStateOf(25) }
 
+    // State to track the number of rounds
+    var numberOfRounds by remember { mutableStateOf(1) }
+
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     when (currentScreen) {
         Screen.INTRO -> {
             IntroScreen(
-                onStartGame = { players, skyStyle, variance ->
+                onStartGame = { players, skyStyle, variance, rounds ->
                     numberOfPlayers = players
                     selectedSkyStyle = skyStyle
                     terrainVariance = variance
+                    numberOfRounds = rounds
                     currentScreen = Screen.PLAYER_NAMES
                 }
             )
@@ -61,8 +65,8 @@ fun App() {
 
         Screen.GAME -> {
             // Game is started, create the game instance
-            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle, terrainVariance) {
-                ScorchedEarthGame(numberOfPlayers).apply {
+            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle, terrainVariance, numberOfRounds) {
+                ScorchedEarthGame(numberOfPlayers, numberOfRounds).apply {
                     // Set player names and types
                     players.forEachIndexed { index, player ->
                         if (index < playerSetups.size) {

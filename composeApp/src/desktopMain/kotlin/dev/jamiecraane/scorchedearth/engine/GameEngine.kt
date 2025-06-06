@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import dev.jamiecraane.scorchedearth.inventory.Item
 import dev.jamiecraane.scorchedearth.model.Explosion
 import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.Projectile
@@ -22,10 +23,17 @@ import kotlin.random.Random
 /**
  * Main game engine class that manages the game state and logic.
  */
-class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
+class ScorchedEarthGame(
+    private val numberOfPlayers: Int = 2,
+    private val totalRounds: Int = 1
+) {
     // Game dimensions - these will be updated when the canvas size changes
     var gameWidth by mutableStateOf(1600f)
     var gameHeight by mutableStateOf(1200f)
+
+    // Round tracking
+    var currentRound by mutableStateOf(1)
+    var totalRoundsState by mutableStateOf(totalRounds)
 
     // Constants for game physics
     private val rollerMinSpeedThreshold = 10.0f // Minimum speed for roller before it explodes
@@ -870,9 +878,15 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 currentPlayerIndex--
             }
 
-            // Check for game over condition
+            // Check for round completion condition
             if (updatedPlayers.size <= 1) {
-                gameState = GameState.GAME_OVER
+                if (currentRound >= totalRoundsState) {
+                    // All rounds completed, game over
+                    gameState = GameState.GAME_OVER
+                } else {
+                    // Transition to next round
+                    transitionToNextRound()
+                }
             }
         }
 
@@ -1148,6 +1162,79 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         terrainVarianceState = variance
         terrain = generateTerrain(gameWidth, gameHeight)
         updatePlayerPositions()
+    }
+
+    /**
+     * Transitions to the next round with random sky and terrain.
+     * Resets player positions and game state.
+     */
+    private fun transitionToNextRound() {
+        // Increment round counter
+        currentRound++
+
+        // Generate random sky style
+        skyStyle = dev.jamiecraane.scorchedearth.sky.SkyStyleSelector.RANDOM.toSkyStyle()
+
+        // Generate random terrain variance (between 10 and 50)
+        val randomVariance = Random.nextInt(10, 51)
+        terrainVarianceState = randomVariance
+
+        // Regenerate terrain
+        terrain = generateTerrain(gameWidth, gameHeight)
+
+        // Store player names, types, and other persistent data
+        val playerNames = players.map { it.name }
+        val playerTypes = players.map { it.type }
+        val playerMoney = players.map { it.money }
+
+        // Create a copy of each player's inventory items
+        val playerInventories = mutableListOf<List<Item>>()
+        for (player in players) {
+            val inventoryItems = mutableListOf<Item>()
+            val items = player.inventory.getAllItems()
+            for (item in items) {
+                inventoryItems.add(Item(item.type, item.quantity))
+            }
+            playerInventories.add(inventoryItems)
+        }
+
+        // Regenerate players
+        players = generatePlayers(gameWidth, gameHeight, numberOfPlayers)
+
+        // Restore player names, types, and other persistent data
+        players.forEachIndexed { index, player ->
+            if (index < playerNames.size) {
+                player.name = playerNames[index]
+                player.type = playerTypes[index]
+                player.money = playerMoney[index]
+
+                // Transfer items from old inventory to new inventory
+                // First clear any default items
+                val defaultItems = player.inventory.getAllItems().toList()
+                for (item in defaultItems) {
+                    player.inventory.removeItem(item.type, item.quantity)
+                }
+
+                // Then add all items from the old inventory
+                val oldInventoryItems = playerInventories[index]
+                for (item in oldInventoryItems) {
+                    player.inventory.addItem(item.type, item.quantity)
+                }
+            }
+        }
+
+        // Update player positions to stick to the terrain
+        updatePlayerPositions()
+
+        // Reset projectile and explosion
+        projectile = null
+        explosion = null
+        miniBombs = listOf()
+
+        // Reset game state
+        gameState = GameState.WAITING_FOR_PLAYER
+        currentPlayerIndex = 0
+        hasPlayerFiredTracerThisTurn = false
     }
 
     /**

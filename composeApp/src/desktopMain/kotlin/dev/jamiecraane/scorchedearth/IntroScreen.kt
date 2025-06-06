@@ -28,15 +28,18 @@ import kotlin.math.sin
 /**
  * Intro screen shown before the game starts.
  *
- * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, and terrain variance
+ * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, terrain variance, and number of rounds
  */
 @Composable
-fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int) -> Unit) {
+fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int) -> Unit) {
     // State for the number of players slider
     var numberOfPlayers by remember { mutableStateOf(2f) }
 
     // State for the terrain variance slider (0-100)
     var terrainVariance by remember { mutableStateOf(25f) }
+
+    // State for the number of rounds slider (1-25)
+    var numberOfRounds by remember { mutableStateOf(1f) }
 
     // State for the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
@@ -174,6 +177,24 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Number of rounds slider
+            Text(
+                text = "Number of Rounds: ${numberOfRounds.toInt()}",
+                color = Color.White,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Slider(
+                value = numberOfRounds,
+                onValueChange = { numberOfRounds = it },
+                valueRange = 1f..25f,
+                steps = 23, // 24 steps for 1-25 rounds
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Sky style selection
             Text(
                 text = "Sky Style:",
@@ -212,7 +233,7 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int) -> Unit) {
 
             // Start button
             Button(
-                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt()) },
+                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt(), numberOfRounds.toInt()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
