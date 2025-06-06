@@ -277,7 +277,7 @@ private fun GameUI(game: ScorchedEarthGame, initialCanvasSize: Size) {
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    items(ProjectileType.values()) { projectileType ->
+                                    items(ProjectileType.entries.toTypedArray()) { projectileType ->
                                         val currentPlayer = game.players[game.currentPlayerIndex]
                                         val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
                                         val canAfford = currentPlayer.money >= projectileType.cost

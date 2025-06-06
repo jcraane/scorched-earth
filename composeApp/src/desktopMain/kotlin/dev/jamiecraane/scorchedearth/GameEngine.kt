@@ -112,10 +112,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     position = Offset(xPosition, baseY),
                     color = colors[i % colors.size]
                 ).apply {
-                    // Add missiles to inventory
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
-                    inventory.addItem(ProjectileType.FUNKY_BOMB, 3)
-                    inventory.addItem(ProjectileType.MIRV, 2)
                 }
             )
         }
@@ -780,7 +777,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         )
 
         // Add the missile to the player's inventory
-        updatedPlayer.inventory.addItem(projectileType, 1)
+        updatedPlayer.inventory.addItem(projectileType, projectileType.purchaseQuantity)
 
         // Update the players list
         val updatedPlayers = players.toMutableList()
@@ -908,9 +905,10 @@ enum class ProjectileType(
     val minDamage: Int,
     val maxDamage: Int,
     val blastRadius: Float,
-    val cost: Int
+    val cost: Int,
+    val purchaseQuantity: Int = 1,
 ) {
-    BABY_MISSILE("Baby Missile", 10, 30, 60f, 250),
+    BABY_MISSILE("Baby Missile", 10, 30, 60f, 250, purchaseQuantity = 10),
     SMALL_MISSILE("Small Missile", 20, 50, 90f, 1000),
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
@@ -929,7 +927,7 @@ data class Player(
     var angle: Float = 45f,
     var power: Float = 50f,
     var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
-    var money: Int = 5000,
+    var money: Int = 1000,
     val inventory: Inventory = Inventory()
 )
 
