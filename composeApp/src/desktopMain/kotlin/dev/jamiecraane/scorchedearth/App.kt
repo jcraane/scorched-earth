@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -39,9 +38,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RadialGradientShader
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -178,7 +174,7 @@ fun App() {
             }
 
             // Missile type selection
-            var showMissilePopup by remember { mutableStateOf(false) }
+            var showInventoryPopup by remember { mutableStateOf(false) }
             val currentPlayer = game.players[game.currentPlayerIndex]
             val currentMissile = currentPlayer.selectedProjectileType
             val currentMissileQuantity = currentPlayer.inventory.getItemQuantity(currentMissile)
@@ -196,7 +192,7 @@ fun App() {
                     modifier = Modifier
                         .weight(1f)
                         .height(40.dp)
-                        .clickable { showMissilePopup = true },
+                        .clickable { showInventoryPopup = true },
                     colors = CardDefaults.cardColors(
                         containerColor = Color.DarkGray.copy(alpha = 0.7f)
                     ),
@@ -223,10 +219,10 @@ fun App() {
                 }
 
                 // Missile selection popup
-                if (showMissilePopup) {
+                if (showInventoryPopup) {
                     Popup(
                         alignment = Alignment.Center,
-                        onDismissRequest = { showMissilePopup = false },
+                        onDismissRequest = { showInventoryPopup = false },
                         properties = PopupProperties(focusable = true)
                     ) {
                         Card(
@@ -279,6 +275,7 @@ fun App() {
                                             projectileType = projectileType,
                                             isSelected = currentPlayer.selectedProjectileType == projectileType,
                                             quantity = quantity,
+                                            canAfford = canAfford,
                                             onClick = {
                                                 // Only allow selection if player has this missile type
                                                 if (quantity > 0) {
@@ -287,7 +284,7 @@ fun App() {
                                                         selectedProjectileType = projectileType
                                                     )
                                                     game.players = players
-                                                    showMissilePopup = false
+                                                    showInventoryPopup = false
                                                 }
                                             },
                                             onBuy = {
@@ -352,13 +349,14 @@ private fun MissileItem(
     projectileType: ProjectileType,
     isSelected: Boolean,
     quantity: Int = 0,
+    canAfford: Boolean = true,
     onClick: () -> Unit,
     onBuy: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.5f)
+            .height(200.dp) // Fixed height instead of aspect ratio
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .border(
@@ -374,59 +372,74 @@ private fun MissileItem(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.SpaceBetween, // Changed to SpaceBetween
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Missile icon (simple colored circle for now)
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(getMissileColor(projectileType), RoundedCornerShape(50))
-            )
+            // Top section with icon and name
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Missile icon (simple colored circle for now)
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(getMissileColor(projectileType), RoundedCornerShape(50))
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Missile name
-            Text(
-                text = projectileType.displayName,
-                color = Color.White,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            // Damage info
-            Text(
-                text = "Damage: ${projectileType.minDamage}-${projectileType.maxDamage}",
-                color = Color.LightGray,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            // Cost info
-            Text(
-                text = "Cost: $${projectileType.cost}",
-                color = Color.LightGray,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            // Quantity
-            Text(
-                text = "Qty: $quantity",
-                color = if (quantity > 0) Color.White else Color.Red,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            // Buy button (only show if onBuy is provided)
-            if (onBuy != null) {
                 Spacer(modifier = Modifier.height(4.dp))
+
+                // Missile name
+                Text(
+                    text = projectileType.displayName,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+
+            // Middle section with details
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Damage info
+                Text(
+                    text = "DMG: ${projectileType.minDamage}-${projectileType.maxDamage}",
+                    color = Color.LightGray,
+                    fontSize = 10.sp
+                )
+
+                // Cost info
+                Text(
+                    text = "Cost: $${projectileType.cost}",
+                    color = Color.LightGray,
+                    fontSize = 10.sp
+                )
+
+                // Quantity
+                Text(
+                    text = "Qty: $quantity",
+                    color = if (quantity > 0) Color.White else Color.Red,
+                    fontSize = 10.sp
+                )
+            }
+
+            // Bottom section with buy button
+            if (onBuy != null) {
                 Button(
                     onClick = onBuy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp),
+                        .height(28.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CAF50) // Green
-                    )
+                        containerColor = if (canAfford) Color(0xFF4CAF50) else Color(0xFF888888)
+                    ),
+                    enabled = canAfford
                 ) {
-                    Text("BUY", fontSize = 12.sp)
+                    Text(
+                        text = if (canAfford) "BUY" else "NO $",
+                        fontSize = 10.sp,
+                        color = if (canAfford) Color.White else Color.DarkGray
+                    )
                 }
             }
         }
