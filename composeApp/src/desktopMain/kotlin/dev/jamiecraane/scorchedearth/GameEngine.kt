@@ -359,17 +359,29 @@ class ScorchedEarthGame {
                 // Get current height at this x-coordinate
                 val currentHeight = terrainHeights[x] ?: continue
 
-                // Calculate deformation amount based on distance from explosion center
-                // The closer to the center, the deeper the crater
-                val deformationFactor = 1.0f - (horizontalDistance / blastRadius)
-                val deformationAmount = blastRadius * deformationFactor
+                // Get vertical distance from explosion to terrain
+                val verticalDistance = kotlin.math.max(0f, currentHeight - position.y)
 
-                // Apply deformation (raise the terrain value, which means digging a crater)
-                // The y-coordinate increases downward in the canvas
-                val newHeight = currentHeight + deformationAmount
+                // Calculate actual distance from explosion center to terrain point
+                val actualDistance = kotlin.math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance)
 
-                // Update the height map
-                newTerrainHeights[x] = newHeight
+                // Only deform if the actual distance is within the blast radius
+                if (actualDistance <= blastRadius) {
+                    // Calculate deformation amount based on distance from explosion center
+                    // Using a parabolic falloff for more realistic crater shape: (1-(d/r)²)
+                    val distanceRatio = actualDistance / blastRadius
+                    val deformationFactor = 1.0f - (distanceRatio * distanceRatio)
+
+                    // Scale the deformation by the blast radius
+                    val deformationAmount = blastRadius * deformationFactor * 0.8f
+
+                    // Apply deformation (raise the terrain value, which means digging a crater)
+                    // The y-coordinate increases downward in the canvas
+                    val newHeight = currentHeight + deformationAmount
+
+                    // Update the height map
+                    newTerrainHeights[x] = newHeight
+                }
             }
         }
 
