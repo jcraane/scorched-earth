@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Slider
@@ -246,6 +247,24 @@ fun App() {
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
 
+                                // Message to show after purchase attempt
+                                var purchaseMessage by remember { mutableStateOf<String?>(null) }
+
+                                // Show purchase message if it exists
+                                purchaseMessage?.let { message ->
+                                    Text(
+                                        text = message,
+                                        color = if (message.contains("Success")) Color.Green else Color.Red,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+
+                                    // Clear message after a delay
+                                    LaunchedEffect(purchaseMessage) {
+                                        delay(2000)
+                                        purchaseMessage = null
+                                    }
+                                }
+
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(2),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -254,6 +273,7 @@ fun App() {
                                     items(ProjectileType.values()) { projectileType ->
                                         val currentPlayer = game.players[game.currentPlayerIndex]
                                         val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
+                                        val canAfford = currentPlayer.money >= projectileType.cost
 
                                         MissileItem(
                                             projectileType = projectileType,
@@ -268,6 +288,14 @@ fun App() {
                                                     )
                                                     game.players = players
                                                     showMissilePopup = false
+                                                }
+                                            },
+                                            onBuy = {
+                                                val success = game.purchaseMissile(projectileType)
+                                                if (success) {
+                                                    purchaseMessage = "Success! Purchased ${projectileType.displayName}"
+                                                } else {
+                                                    purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
                                                 }
                                             }
                                         )
@@ -324,7 +352,8 @@ private fun MissileItem(
     projectileType: ProjectileType,
     isSelected: Boolean,
     quantity: Int = 0,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onBuy: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -371,12 +400,35 @@ private fun MissileItem(
                 modifier = Modifier.padding(top = 2.dp)
             )
 
+            // Cost info
+            Text(
+                text = "Cost: $${projectileType.cost}",
+                color = Color.LightGray,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+
             // Quantity
             Text(
                 text = "Qty: $quantity",
                 color = if (quantity > 0) Color.White else Color.Red,
                 modifier = Modifier.padding(top = 2.dp)
             )
+
+            // Buy button (only show if onBuy is provided)
+            if (onBuy != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Button(
+                    onClick = onBuy,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50) // Green
+                    )
+                ) {
+                    Text("BUY", fontSize = 12.sp)
+                }
+            }
         }
     }
 }

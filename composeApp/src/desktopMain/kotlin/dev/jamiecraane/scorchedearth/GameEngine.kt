@@ -532,6 +532,35 @@ class ScorchedEarthGame {
     }
 
     /**
+     * Attempts to purchase a missile for the current player.
+     * @param projectileType The type of projectile to purchase
+     * @return True if the purchase was successful, false if the player doesn't have enough money
+     */
+    fun purchaseMissile(projectileType: ProjectileType): Boolean {
+        val player = players[currentPlayerIndex]
+
+        // Check if player has enough money
+        if (player.money < projectileType.cost) {
+            return false
+        }
+
+        // Create a new player with updated money
+        val updatedPlayer = player.copy(
+            money = player.money - projectileType.cost
+        )
+
+        // Add the missile to the player's inventory
+        updatedPlayer.inventory.addItem(projectileType, 1)
+
+        // Update the players list
+        val updatedPlayers = players.toMutableList()
+        updatedPlayers[currentPlayerIndex] = updatedPlayer
+        players = updatedPlayers
+
+        return true
+    }
+
+    /**
      * Fires a projectile with the given angle and power.
      * @param angle Angle in degrees (0 = right, 90 = up)
      * @param power Power factor (0-100)
@@ -589,13 +618,14 @@ enum class ProjectileType(
     val displayName: String,
     val minDamage: Int,
     val maxDamage: Int,
-    val blastRadius: Float
+    val blastRadius: Float,
+    val cost: Int
 ) {
-    BABY_MISSILE("Baby Missile", 10, 30, 60f),
-    SMALL_MISSILE("Small Missile", 20, 50, 90f),
-    BIG_MISSILE("Big Missile", 30, 75, 200f),
-    DEATHS_HEAD("Death's Head", 50, 100, 300f),
-    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f)
+    BABY_MISSILE("Baby Missile", 10, 30, 60f, 250),
+    SMALL_MISSILE("Small Missile", 20, 50, 90f, 1000),
+    BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
+    DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
+    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f, 10000)
 }
 
 /**
