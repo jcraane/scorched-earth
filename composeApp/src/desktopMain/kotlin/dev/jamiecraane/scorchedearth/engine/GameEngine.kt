@@ -36,6 +36,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     // Terrain height data for collision detection
     var terrainHeights by mutableStateOf<Map<Float, Float>>(mapOf())
 
+    // Terrain variance (0-100)
+    var terrainVarianceState by mutableStateOf(25)
+
     // Terrain data
     var terrain by mutableStateOf(generateTerrain(gameWidth, gameHeight))
 
@@ -168,11 +171,22 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         val segments = 100
         val segmentWidth = width / segments
 
+        // Calculate variance factors based on terrainVariance (0-100)
+        // At terrainVariance = 25, we want the original behavior (sine amplitude 50, random up to 30)
+        // At terrainVariance = 0, we want flat terrain (sine amplitude 0, random 0)
+        // At terrainVariance = 100, we want extreme terrain (sine amplitude 200, random up to 120)
+        val sineAmplitude = terrainVarianceState * 2f  // 0-200 range (50 at terrainVariance=25)
+        val randomFactor = terrainVarianceState * 1.2f  // 0-120 range (30 at terrainVariance=25)
+
         // Create a map to store terrain heights
         val heights = mutableMapOf<Float, Float>()
 
         // Start at the left edge
-        val startY = baseHeight + Random.nextFloat() * 50f
+        val startY = if (terrainVarianceState > 0) {
+            baseHeight + Random.nextFloat() * randomFactor
+        } else {
+            baseHeight  // Completely flat at terrainVariance = 0
+        }
         path.moveTo(0f, height)
         path.lineTo(0f, startY)
         heights[0f] = startY
@@ -180,7 +194,11 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         // Generate terrain points
         for (i in 1..segments) {
             val x = i * segmentWidth
-            val y = baseHeight + sin(i * 0.1).toFloat() * 50f + Random.nextFloat() * 30f
+            val y = if (terrainVarianceState > 0) {
+                baseHeight + sin(i * 0.1).toFloat() * sineAmplitude + Random.nextFloat() * randomFactor
+            } else {
+                baseHeight  // Completely flat at terrainVariance = 0
+            }
             path.lineTo(x, y)
             heights[x] = y
         }
@@ -853,6 +871,16 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     }
 
     /**
+     * Sets the terrain variance and regenerates the terrain.
+     * @param variance The new terrain variance value (0-100)
+     */
+    fun setTerrainVariance(variance: Int) {
+        terrainVarianceState = variance
+        terrain = generateTerrain(gameWidth, gameHeight)
+        updatePlayerPositions()
+    }
+
+    /**
      * Ends the projectile flight and switches to the next player if no mini-bombs are in flight.
      */
     private fun endProjectileFlight() {
@@ -869,6 +897,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             // Don't advance to next player yet - we'll do that when mini-bombs are done
         }
     }
+
 
     /**
      * Attempts to purchase a missile for the current player.

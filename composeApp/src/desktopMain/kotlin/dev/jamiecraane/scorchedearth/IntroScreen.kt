@@ -28,12 +28,15 @@ import kotlin.math.sin
 /**
  * Intro screen shown before the game starts.
  *
- * @param onStartGame Callback when the start button is clicked, with the selected number of players and sky style
+ * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, and terrain variance
  */
 @Composable
-fun IntroScreen(onStartGame: (Int, SkyStyleSelector) -> Unit) {
+fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int) -> Unit) {
     // State for the number of players slider
     var numberOfPlayers by remember { mutableStateOf(2f) }
+
+    // State for the terrain variance slider (0-100)
+    var terrainVariance by remember { mutableStateOf(25f) }
 
     // State for the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
@@ -146,6 +149,31 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Terrain variance slider
+            Text(
+                text = "Terrain Variance: ${terrainVariance.toInt()}",
+                color = Color.White,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "0 = Flat, 100 = Extreme",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Slider(
+                value = terrainVariance,
+                onValueChange = { terrainVariance = it },
+                valueRange = 0f..100f,
+                steps = 99, // 100 steps for 0-100 variance
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Sky style selection
             Text(
                 text = "Sky Style:",
@@ -184,7 +212,7 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector) -> Unit) {
 
             // Start button
             Button(
-                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle) },
+                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

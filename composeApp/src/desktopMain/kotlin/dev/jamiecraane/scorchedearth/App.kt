@@ -31,15 +31,19 @@ fun App() {
     // State to track the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
 
+    // State to track the terrain variance
+    var terrainVariance by remember { mutableStateOf(25) }
+
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     when (currentScreen) {
         Screen.INTRO -> {
             IntroScreen(
-                onStartGame = { players, skyStyle ->
+                onStartGame = { players, skyStyle, variance ->
                     numberOfPlayers = players
                     selectedSkyStyle = skyStyle
+                    terrainVariance = variance
                     currentScreen = Screen.PLAYER_NAMES
                 }
             )
@@ -57,7 +61,7 @@ fun App() {
 
         Screen.GAME -> {
             // Game is started, create the game instance
-            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle) {
+            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle, terrainVariance) {
                 ScorchedEarthGame(numberOfPlayers).apply {
                     // Set player names and types
                     players.forEachIndexed { index, player ->
@@ -69,6 +73,9 @@ fun App() {
 
                     // Set the sky style
                     skyStyle = selectedSkyStyle.toSkyStyle()
+
+                    // Set the terrain variance and regenerate terrain
+                    setTerrainVariance(terrainVariance)
                 }
             }
 
