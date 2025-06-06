@@ -243,9 +243,7 @@ class ScorchedEarthGame {
             projectile = Projectile(
                 position = newPosition,
                 velocity = newVelocity,
-                minDamage = proj.minDamage,
-                maxDamage = proj.maxDamage,
-                blastRadius = proj.blastRadius
+                type = proj.type
             )
 
             // Check for collision with boundaries
@@ -550,9 +548,7 @@ class ScorchedEarthGame {
         projectile = Projectile(
             position = Offset(player.position.x, player.position.y - 20f),
             velocity = velocity,
-            minDamage = 10,
-            maxDamage = 100,
-            blastRadius = 90f
+            type = player.selectedProjectileType
         )
 
         gameState = GameState.PROJECTILE_IN_FLIGHT
@@ -570,6 +566,22 @@ enum class GameState {
 }
 
 /**
+ * Defines the different types of projectiles available in the game.
+ */
+enum class ProjectileType(
+    val displayName: String,
+    val minDamage: Int,
+    val maxDamage: Int,
+    val blastRadius: Float
+) {
+    BABY_MISSILE("Baby Missile", 10, 30, 60f),
+    SMALL_MISSILE("Small Missile", 20, 50, 90f),
+    BIG_MISSILE("Big Missile", 30, 75, 200f),
+    DEATHS_HEAD("Death's Head", 50, 100, 300f),
+    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 700f)
+}
+
+/**
  * Represents a player in the game.
  */
 data class Player(
@@ -577,13 +589,15 @@ data class Player(
     val color: androidx.compose.ui.graphics.Color,
     var health: Int = 100,
     var angle: Float = 45f,
-    var power: Float = 50f
+    var power: Float = 50f,
+    var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE
 )
 
 /**
  * Represents a projectile in flight.
  * @param position Current position of the projectile
  * @param velocity Current velocity of the projectile
+ * @param type The type of projectile
  * @param minDamage Minimum damage dealt at the outer edge of the blast radius
  * @param maxDamage Maximum damage dealt on direct hit
  * @param blastRadius Radius of the explosion when the projectile hits
@@ -591,9 +605,10 @@ data class Player(
 data class Projectile(
     val position: Offset,
     val velocity: Offset,
-    val minDamage: Int = 10,
-    val maxDamage: Int = 100,
-    val blastRadius: Float = 90f
+    val type: ProjectileType,
+    val minDamage: Int = type.minDamage,
+    val maxDamage: Int = type.maxDamage,
+    val blastRadius: Float = type.blastRadius
 )
 
 /**

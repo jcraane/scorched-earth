@@ -137,6 +137,43 @@ fun App() {
                 )
             }
 
+            // Missile type selection
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Missile: ",
+                    modifier = Modifier.width(100.dp),
+                    color = Color.White)
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    ProjectileType.values().forEach { projectileType ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = game.players[game.currentPlayerIndex].selectedProjectileType == projectileType,
+                                onClick = {
+                                    val players = game.players.toMutableList()
+                                    players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
+                                        selectedProjectileType = projectileType
+                                    )
+                                    game.players = players
+                                }
+                            )
+                            Text(
+                                text = "${projectileType.displayName} (Damage: ${projectileType.minDamage}-${projectileType.maxDamage})",
+                                color = Color.White,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Fire button
