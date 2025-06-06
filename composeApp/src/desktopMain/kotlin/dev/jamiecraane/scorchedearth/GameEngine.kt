@@ -167,9 +167,10 @@ class ScorchedEarthGame {
         // Player 1 (blue, right side) fires left (negative direction)
         val directionMultiplier = if (currentPlayerIndex == 0) 1f else -1f
 
+        val powerMultiplieFactor = 12f
         val velocity = Offset(
-            cos(angleRadians) * power * 2f * directionMultiplier,
-            -sin(angleRadians) * power * 2f
+            cos(angleRadians) * power * powerMultiplieFactor * directionMultiplier, // Increased from 2f to 8f
+            -sin(angleRadians) * power * powerMultiplieFactor // Increased from 2f to 8f
         )
 
         projectile = Projectile(
