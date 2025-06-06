@@ -15,6 +15,9 @@ import dev.jamiecraane.scorchedearth.engine.ProjectileType
  * @param maxTrailLength Maximum number of positions to keep in the trail
  * @param bounceCount Number of times the projectile has bounced (for Leapfrog)
  * @param maxBounces Maximum number of bounces allowed (for Leapfrog)
+ * @param isRolling Whether the projectile is currently rolling (for Roller)
+ * @param rollingDistance Distance the projectile has rolled so far (for Roller)
+ * @param maxRollingDistance Maximum distance the projectile can roll (for Roller)
  */
 data class Projectile(
     val position: Offset,
@@ -26,5 +29,8 @@ data class Projectile(
     val trail: List<Offset> = listOf(),
     val maxTrailLength: Int = 15,
     val bounceCount: Int = 0,
-    val maxBounces: Int = 5
+    val maxBounces: Int = 5,
+    val isRolling: Boolean = false,
+    val rollingDistance: Float = 0f,
+    val maxRollingDistance: Float = 500f
 )

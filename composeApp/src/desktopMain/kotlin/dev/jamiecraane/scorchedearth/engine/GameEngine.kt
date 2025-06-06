@@ -27,6 +27,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     var gameWidth by mutableStateOf(1600f)
     var gameHeight by mutableStateOf(1200f)
 
+    // Constants for game physics
+    private val rollerMinSpeedThreshold = 10.0f // Minimum speed for roller before it explodes
+
     // Game state
     var gameState by mutableStateOf(GameState.WAITING_FOR_PLAYER)
 
@@ -145,6 +148,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                     inventory.addItem(ProjectileType.BABY_MISSILE, 10)
                     inventory.addItem(ProjectileType.LEAPFROG, 3)
                     inventory.addItem(ProjectileType.TRACER, 10)
+                    inventory.addItem(ProjectileType.ROLLER, 2)
                 }
             )
         }
@@ -426,6 +430,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         }
     }
 
+
     /**
      * Updates the projectile position and checks for collisions.
      * @param deltaTime Time elapsed since the last update in seconds
@@ -475,7 +480,10 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 type = proj.type,
                 trail = updatedTrail,
                 bounceCount = proj.bounceCount,
-                maxBounces = proj.maxBounces
+                maxBounces = proj.maxBounces,
+                isRolling = proj.isRolling, // Preserve rolling state
+                rollingDistance = proj.rollingDistance,
+                maxRollingDistance = proj.maxRollingDistance
             )
 
             // Check for collision with boundaries
@@ -493,7 +501,21 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 return@let
             }
 
-            // Check for collision with terrain
+            // Special handling for Roller projectiles
+            if (proj.type == ProjectileType.ROLLER) {
+                if (proj.isRolling) {
+                    // Already rolling - continue rolling physics
+                    handleRollerRolling(newPosition, proj, newVelocity, deltaTime)
+                } else {
+                    // Not rolling yet - check if it should start rolling
+                    if (isCollidingWithTerrain(newPosition)) {
+                        handleRollerStart(newPosition, proj, newVelocity)
+                    }
+                }
+                return@let
+            }
+
+            // Check for collision with terrain (for non-roller projectiles)
             if (isCollidingWithTerrain(newPosition)) {
                 // For MIRV and TRACER, don't explode on terrain collision - just remove it
                 if (proj.type == ProjectileType.MIRV || proj.type == ProjectileType.TRACER) {
@@ -519,7 +541,12 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                         createExplosion(player.position, projectile)
 
                         // Apply direct hit damage (use projectile's maxDamage for direct hit)
-                        val damage = projectile?.maxDamage ?: 100
+                        val damage = if (proj.type == ProjectileType.ROLLER && proj.isRolling) {
+                            (projectile?.maxDamage ?: 100) * 1.5f.toInt() // 50% more damage when rolling
+                        } else {
+                            projectile?.maxDamage ?: 100
+                        }
+
                         applyDamageToPlayer(index, damage)
 
                         endProjectileFlight()
@@ -594,6 +621,219 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     }
 
     /**
+     * Handles the initial impact of a Roller projectile with terrain.
+     * @param position The current position of the projectile
+     * @param proj The current projectile
+     * @param velocity The current velocity of the projectile
+     */
+    private fun handleRollerStart(position: Offset, proj: Projectile, velocity: Offset) {
+        // Get terrain height at the impact position
+        val terrainHeight = getTerrainHeightAt(position.x) ?: return
+
+        // Position the Roller slightly above the terrain surface
+        val rollerRadius = 5f
+        val adjustedY = terrainHeight - rollerRadius
+
+        // Create a new position that's on the terrain surface
+        val adjustedPosition = Offset(position.x, adjustedY)
+
+        // Direction is determined by the original horizontal direction
+        val horizontalDirection = if (velocity.x > 0) 1f else -1f
+
+        // Start with a much lower initial rolling speed to make physics more realistic
+        val initialRollingSpeed = 15f // Fixed initial speed that can be slowed down by friction
+
+        // Create simple rolling velocity - just horizontal movement
+        val rollingVelocity = Offset(
+            horizontalDirection * initialRollingSpeed,
+            0f // No vertical component initially
+        )
+
+        println("[ROLLER DEBUG] Starting to roll with speed: $initialRollingSpeed")
+
+        // Switch to rolling mode
+        projectile = Projectile(
+            position = adjustedPosition,
+            velocity = rollingVelocity,
+            type = proj.type,
+            trail = proj.trail,
+            isRolling = true, // Now in rolling mode
+            rollingDistance = 0f,
+            maxRollingDistance = 300f // Reduced maximum rolling distance
+        )
+    }
+
+    /**
+     * Handles the rolling behavior of the Roller projectile.
+     * @param position The current position of the projectile
+     * @param proj The current projectile
+     * @param velocity The current velocity of the projectile
+     * @param deltaTime Time elapsed since the last update in seconds
+     */
+    private fun handleRollerRolling(position: Offset, proj: Projectile, velocity: Offset, deltaTime: Float) {
+        // Calculate how far the roller has moved in this step
+        val distanceMoved = sqrt(
+            (position.x - proj.position.x) * (position.x - proj.position.x) +
+                (position.y - proj.position.y) * (position.y - proj.position.y)
+        )
+
+        // Update total rolling distance
+        val newRollingDistance = proj.rollingDistance + distanceMoved
+
+        // Calculate current horizontal speed (ignore vertical component for rolling)
+        val currentSpeed = abs(velocity.x)
+
+        println("[ROLLER DEBUG] Current speed: $currentSpeed, Threshold: $rollerMinSpeedThreshold, Distance: $newRollingDistance")
+
+        // Check for explosion conditions FIRST
+        if (currentSpeed < rollerMinSpeedThreshold) {
+            println("[ROLLER DEBUG] Speed below threshold ($currentSpeed < $rollerMinSpeedThreshold), exploding")
+            createExplosion(position, proj)
+            endProjectileFlight()
+            return
+        }
+
+        if (newRollingDistance >= proj.maxRollingDistance) {
+            println("[ROLLER DEBUG] Maximum distance reached, exploding")
+            createExplosion(position, proj)
+            endProjectileFlight()
+            return
+        }
+
+        // Calculate new x-position based on velocity
+        val newX = position.x + velocity.x * deltaTime
+
+        // Check if roller has gone off screen
+        if (newX < 0 || newX > gameWidth) {
+            println("[ROLLER DEBUG] Off screen, exploding")
+            createExplosion(position, proj)
+            endProjectileFlight()
+            return
+        }
+
+        // Get terrain height at the new x-position
+        val terrainHeight = getTerrainHeightAt(newX) ?: run {
+            createExplosion(position, proj)
+            endProjectileFlight()
+            return
+        }
+
+        // Position the Roller on the terrain surface
+        val rollerRadius = 5f
+        val newY = terrainHeight - rollerRadius
+        val newPosition = Offset(newX, newY)
+
+        // Get terrain slope at new position
+        val terrainSlope = getTerrainSlopeAt(newPosition)
+
+        // Check if in a valley
+        if (isInValley(newPosition, terrainSlope)) {
+            println("[ROLLER DEBUG] In valley, exploding")
+            createExplosion(newPosition, proj)
+            endProjectileFlight()
+            return
+        }
+
+        // Calculate the horizontal direction based on current velocity
+        val currentHorizontalDirection = if (velocity.x > 0) 1f else -1f
+
+        // Apply physics effects to speed with stronger effects:
+        // 1. Gravity effect on slopes
+        val slopeEffect = -terrainSlope * 3.0f // Strong slope effect
+
+        // 2. Rolling friction (much stronger to ensure it slows down)
+        val friction = 4.0f // Strong friction per second
+
+        // Calculate new speed
+        var newSpeed = currentSpeed + slopeEffect * deltaTime - friction * deltaTime
+
+        // Handle direction changes on steep uphill slopes
+        var finalHorizontalDirection = currentHorizontalDirection
+        if (newSpeed < 0 && terrainSlope > 0.2f) {
+            // Rolling backwards due to gravity on slope
+            newSpeed = abs(newSpeed) * 0.3f // Much reduced speed when rolling back
+            finalHorizontalDirection = -currentHorizontalDirection
+            println("[ROLLER DEBUG] Rolling backwards due to slope")
+        }
+
+        // Ensure speed doesn't go negative
+        newSpeed = newSpeed.coerceAtLeast(0f)
+
+        println("[ROLLER DEBUG] New speed after physics: $newSpeed (slope: $terrainSlope, friction applied)")
+
+        // Create new rolling velocity
+        val rollingVelocity = Offset(
+            finalHorizontalDirection * newSpeed,
+            0f // Keep rolling on surface
+        )
+
+        // Continue rolling
+        projectile = Projectile(
+            position = newPosition,
+            velocity = rollingVelocity,
+            type = proj.type,
+            trail = proj.trail,
+            isRolling = true,
+            rollingDistance = newRollingDistance,
+            maxRollingDistance = proj.maxRollingDistance
+        )
+    }
+
+    /**
+     * Gets the slope of the terrain at a specific position.
+     * @param position The position to check
+     * @return The slope value (positive for uphill, negative for downhill)
+     */
+    private fun getTerrainSlopeAt(position: Offset): Float {
+        // Find the closest x-coordinates in our terrain height map
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        // If position is outside the terrain bounds, return flat slope
+        if (position.x < terrainXCoords.first() || position.x > terrainXCoords.last()) {
+            return 0f
+        }
+
+        // Find the two closest x-coordinates
+        val lowerX = terrainXCoords.filter { it <= position.x }.maxOrNull() ?: return 0f
+        val upperX = terrainXCoords.filter { it >= position.x }.minOrNull() ?: return 0f
+
+        // If they're the same point, we can't calculate slope
+        if (upperX == lowerX) {
+            return 0f
+        }
+
+        // Get the heights at those coordinates
+        val lowerY = terrainHeights[lowerX] ?: return 0f
+        val upperY = terrainHeights[upperX] ?: return 0f
+
+        // Calculate slope (rise over run)
+        // Note: In screen coordinates, y increases downward, so we negate the result
+        return (upperY - lowerY) / (upperX - lowerX)
+    }
+
+    /**
+     * Determines if a position is in a valley (local minimum) based on terrain slope.
+     * @param position The position to check
+     * @param currentSlope The current slope at this position
+     * @return True if the position is in a valley
+     */
+    private fun isInValley(position: Offset, currentSlope: Float): Boolean {
+        // A valley is where the slope changes from negative to positive
+        // We can detect this by checking slopes slightly to the left and right
+
+        // Check slope slightly to the left
+        val leftPosition = Offset(position.x - 5f, position.y)
+        val leftSlope = getTerrainSlopeAt(leftPosition)
+
+        // Check slope slightly to the right
+        val rightPosition = Offset(position.x + 5f, position.y)
+        val rightSlope = getTerrainSlopeAt(rightPosition)
+
+        // In a valley: left slope is negative (downhill from left), right slope is positive (uphill to right)
+        return leftSlope < -0.1f && rightSlope > 0.1f
+    }
+
+    /**
      * Applies damage to a player and removes them if health reaches 0.
      * @param playerIndex The index of the player to damage
      * @param damage The amount of damage to apply
@@ -633,33 +873,43 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         players = updatedPlayers
     }
     /**
+     * Gets the terrain height at a specific x-coordinate.
+     * @param x The x-coordinate to check
+     * @return The terrain height at the specified x-coordinate, or null if outside terrain bounds
+     */
+    private fun getTerrainHeightAt(x: Float): Float? {
+        // Find the closest x-coordinates in our terrain height map
+        val terrainXCoords = terrainHeights.keys.toList().sorted()
+
+        // If position is outside the terrain bounds, return null
+        if (x < terrainXCoords.first() || x > terrainXCoords.last()) {
+            return null
+        }
+
+        // Find the two closest x-coordinates
+        val lowerX = terrainXCoords.filter { it <= x }.maxOrNull() ?: return null
+        val upperX = terrainXCoords.filter { it >= x }.minOrNull() ?: return null
+
+        // Get the heights at those coordinates
+        val lowerY = terrainHeights[lowerX] ?: return null
+        val upperY = terrainHeights[upperX] ?: return null
+
+        // Interpolate to find the terrain height at the exact x-coordinate
+        return if (upperX == lowerX) {
+            lowerY
+        } else {
+            lowerY + (upperY - lowerY) * (x - lowerX) / (upperX - lowerX)
+        }
+    }
+
+    /**
      * Checks if a point is colliding with the terrain.
      * @param position The position to check
      * @return True if the position is below the terrain surface
      */
     private fun isCollidingWithTerrain(position: Offset): Boolean {
-        // Find the closest x-coordinates in our terrain height map
-        val terrainXCoords = terrainHeights.keys.toList().sorted()
-
-        // If position is outside the terrain bounds, no collision
-        if (position.x < terrainXCoords.first() || position.x > terrainXCoords.last()) {
-            return false
-        }
-
-        // Find the two closest x-coordinates
-        val lowerX = terrainXCoords.filter { it <= position.x }.maxOrNull() ?: return false
-        val upperX = terrainXCoords.filter { it >= position.x }.minOrNull() ?: return false
-
-        // Get the heights at those coordinates
-        val lowerY = terrainHeights[lowerX] ?: return false
-        val upperY = terrainHeights[upperX] ?: return false
-
-        // Interpolate to find the terrain height at the exact x-coordinate
-        val terrainHeight = if (upperX == lowerX) {
-            lowerY
-        } else {
-            lowerY + (upperY - lowerY) * (position.x - lowerX) / (upperX - lowerX)
-        }
+        // Get the terrain height at the position's x-coordinate
+        val terrainHeight = getTerrainHeightAt(position.x) ?: return false
 
         // Check if the position is below the terrain surface
         return position.y >= terrainHeight
@@ -1070,13 +1320,14 @@ enum class ProjectileType(
     val purchaseQuantity: Int = 1,
 ) {
     BABY_MISSILE("Baby Missile", 10, 30, 60f, 250, purchaseQuantity = 10),
-    SMALL_MISSILE("Small Missile", 20, 50, 90f, 1000),
+    SMALL_MISSILE("Small Missile", 20, 50, 90f, 1875, purchaseQuantity = 5),
     BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
     DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
     BABY_NUKE("Baby Nuke", 60, 125, 650f, 10000, purchaseQuantity = 3),
     NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 1000f, 12000),
-    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
-    MIRV("MIRV", 15, 40, 80f, 3500),
-    LEAPFROG("Leapfrog", 15, 35, 70f, 3000),
-    TRACER("Tracer", 0, 0, 0f, 500, purchaseQuantity = 10)
+    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 7000, purchaseQuantity = 2),
+    MIRV("MIRV", 15, 40, 80f, 7500, purchaseQuantity = 3),
+    LEAPFROG("Leapfrog", 15, 35, 70f, 7500, purchaseQuantity = 2),
+    TRACER("Tracer", 0, 0, 0f, 500, purchaseQuantity = 10),
+    ROLLER("Roller", 40, 80, 150f, 4000, purchaseQuantity = 4)
 }
