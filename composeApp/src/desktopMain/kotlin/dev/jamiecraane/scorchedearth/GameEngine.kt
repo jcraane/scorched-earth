@@ -792,20 +792,32 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         val numberOfSubProjectiles = 6 // Number of sub-projectiles
         val newMiniBombs = mutableListOf<Projectile>()
 
-        // Calculate the spread angle for the sub-projectiles
-        val baseAngle = -90f // Straight down
-        val spreadAngle = 120f // Total spread angle
+        // Calculate the original projectile's direction angle
+        val originalAngleRadians = kotlin.math.atan2(parentVelocity.y, parentVelocity.x)
+        val originalAngleDegrees = originalAngleRadians * 180f / PI.toFloat()
+
+        // Set spread angle for sub-projectiles
+        val spreadAngle = 40f // Total spread angle in degrees
         val angleStep = spreadAngle / (numberOfSubProjectiles - 1)
 
         for (i in 0 until numberOfSubProjectiles) {
-            // Calculate angle for this sub-projectile
-            val angle = (baseAngle - spreadAngle/2 + i * angleStep) * PI.toFloat() / 180f
+            // Calculate angle variation for this sub-projectile (centered around original angle)
+            val angleVariation = -spreadAngle/2 + i * angleStep
 
-            // Calculate velocity with a base speed
-            val speed = 200f + Random.nextFloat() * 100f
+            // Add a small random component to make trajectories more varied
+            val randomVariation = Random.nextFloat() * 10f - 5f // ±5 degrees random variation
+
+            // Calculate final angle in radians (maintain original direction but add variation)
+            val finalAngleRadians = (originalAngleDegrees + angleVariation + randomVariation) * PI.toFloat() / 180f
+
+            // Calculate velocity with a base speed slightly higher than the parent
+            val speedMultiplier = 0.8f + Random.nextFloat() * 0.4f // 80-120% of parent speed
+            val parentSpeed = kotlin.math.sqrt(parentVelocity.x * parentVelocity.x + parentVelocity.y * parentVelocity.y)
+            val speed = parentSpeed * speedMultiplier
+
             val velocity = Offset(
-                cos(angle) * speed,
-                sin(angle) * speed
+                cos(finalAngleRadians) * speed,
+                sin(finalAngleRadians) * speed
             )
 
             // Create a sub-projectile with slightly reduced damage
