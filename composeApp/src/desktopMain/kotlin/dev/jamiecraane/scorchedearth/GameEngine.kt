@@ -275,6 +275,13 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // Update the mini-bombs list
         miniBombs = updatedMiniBombs
+
+        // If all mini-bombs have exploded, advance to the next player
+        if (miniBombs.isEmpty() && projectile == null && gameState == GameState.PROJECTILE_IN_FLIGHT) {
+            // All projectiles and mini-bombs are gone, move to next player
+            gameState = GameState.WAITING_FOR_PLAYER
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+        }
     }
 
     /**
@@ -750,6 +757,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         } else {
             // Keep the game state as PROJECTILE_IN_FLIGHT while mini-bombs are active
             gameState = GameState.PROJECTILE_IN_FLIGHT
+            // Don't advance to next player yet - we'll do that when mini-bombs are done
         }
     }
 
