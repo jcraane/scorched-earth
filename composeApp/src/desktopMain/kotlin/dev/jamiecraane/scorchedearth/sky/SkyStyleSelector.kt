@@ -10,6 +10,7 @@ enum class SkyStyleSelector(val displayName: String) {
     SUNRISE("Sunrise"),
     AFTERNOON("Afternoon"),
     SUNSET("Sunset"),
+    NIGHT("Night"),
     RANDOM("Random (Default)");
 
     /**
@@ -22,6 +23,7 @@ enum class SkyStyleSelector(val displayName: String) {
             SUNRISE -> SkyStyle.SUNRISE
             AFTERNOON -> SkyStyle.AFTERNOON
             SUNSET -> SkyStyle.SUNSET
+            NIGHT -> SkyStyle.NIGHT
             RANDOM -> {
                 // Get a random sky style
                 val styles = SkyStyle.values()

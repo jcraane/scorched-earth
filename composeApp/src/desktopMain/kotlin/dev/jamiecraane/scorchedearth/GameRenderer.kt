@@ -1,5 +1,8 @@
 package dev.jamiecraane.scorchedearth
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -9,8 +12,18 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
+import dev.jamiecraane.scorchedearth.sky.SkyStyle
+import dev.jamiecraane.scorchedearth.sky.Star
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
+
+// Store stars for the night sky
+private var stars by mutableStateOf<List<Star>>(listOf())
+// Track when stars were last generated to avoid regenerating them too frequently
+private var lastStarGenerationTime = 0L
+// Track when stars were last updated to control flickering rate
+private var lastStarUpdateTime = 0L
 
 /**
  * Extension function to draw all game elements on the canvas.
@@ -23,6 +36,31 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
             brush = game.skyStyle.createGradientBrush(),
             size = size
         )
+
+        // Draw stars if night sky is selected
+        if (game.skyStyle == SkyStyle.NIGHT) {
+            // Generate stars if they don't exist or if it's been a while since they were last generated
+            val currentTime = System.currentTimeMillis()
+            if (stars.isEmpty() || currentTime - lastStarGenerationTime > 30000) { // Regenerate stars every 30 seconds
+                stars = SkyStyle.generateStars(size.width, size.height, 150)
+                lastStarGenerationTime = currentTime
+            }
+
+            // Update star brightness periodically to create flickering effect
+            if (currentTime - lastStarUpdateTime > 100) { // Update every 100ms
+                SkyStyle.updateStarBrightness(stars)
+                lastStarUpdateTime = currentTime
+            }
+
+            // Draw each star
+            stars.forEach { star ->
+                drawCircle(
+                    color = Color.White.copy(alpha = star.brightness),
+                    radius = star.size,
+                    center = Offset(star.x, star.y)
+                )
+            }
+        }
 
         // Draw terrain
         drawPath(
