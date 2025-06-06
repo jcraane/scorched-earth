@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import dev.jamiecraane.scorchedearth.ProjectileType
+import dev.jamiecraane.scorchedearth.engine.ProjectileType
 
 /**
  * Button to display the current missile and open the inventory popup.

@@ -1,7 +1,6 @@
 package dev.jamiecraane.scorchedearth.inventory
 
-import androidx.compose.ui.graphics.Color
-import dev.jamiecraane.scorchedearth.ProjectileType
+import dev.jamiecraane.scorchedearth.engine.ProjectileType
 
 /**
  * Represents an item in a player's inventory.

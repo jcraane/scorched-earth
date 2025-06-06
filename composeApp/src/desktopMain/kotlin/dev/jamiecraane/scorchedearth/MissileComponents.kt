@@ -1,1 +1,0 @@
-package dev.jamiecraane.scorchedearth

@@ -1,14 +1,21 @@
-package dev.jamiecraane.scorchedearth
+package dev.jamiecraane.scorchedearth.engine
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import dev.jamiecraane.scorchedearth.inventory.Inventory
+import dev.jamiecraane.scorchedearth.model.Explosion
+import dev.jamiecraane.scorchedearth.model.Player
+import dev.jamiecraane.scorchedearth.model.Projectile
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
@@ -89,16 +96,16 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
         // Generate colors for players
         val colors = listOf(
-            androidx.compose.ui.graphics.Color.Red,
-            androidx.compose.ui.graphics.Color.Blue,
-            androidx.compose.ui.graphics.Color.Green,
-            androidx.compose.ui.graphics.Color.Yellow,
-            androidx.compose.ui.graphics.Color.Magenta,
-            androidx.compose.ui.graphics.Color.Cyan,
-            androidx.compose.ui.graphics.Color.White,
-            androidx.compose.ui.graphics.Color(0xFFFF8000), // Orange
-            androidx.compose.ui.graphics.Color(0xFF800080), // Purple
-            androidx.compose.ui.graphics.Color(0xFF008080)  // Teal
+            Color.Red,
+            Color.Blue,
+            Color.Green,
+            Color.Yellow,
+            Color.Magenta,
+            Color.Cyan,
+            Color.White,
+            Color(0xFFFF8000), // Orange
+            Color(0xFF800080), // Purple
+            Color(0xFF008080)  // Teal
         )
 
         // Calculate positions evenly distributed across the width
@@ -530,7 +537,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
      */
     private fun isCollidingWithPlayer(position: Offset, player: Player): Boolean {
         val playerRadius = 15f // Same as the radius used for drawing
-        val distance = kotlin.math.sqrt(
+        val distance = sqrt(
             (position.x - player.position.x) * (position.x - player.position.x) +
             (position.y - player.position.y) * (position.y - player.position.y)
         )
@@ -628,7 +635,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         // Check each player
         players.forEachIndexed { index, player ->
             // Calculate distance from player to explosion
-            val distance = kotlin.math.sqrt(
+            val distance = sqrt(
                 (player.position.x - explosionPosition.x) * (player.position.x - explosionPosition.x) +
                 (player.position.y - explosionPosition.y) * (player.position.y - explosionPosition.y)
             )
@@ -666,7 +673,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         // Calculate the deformation for each x-coordinate within the blast radius
         for (x in terrainXCoords) {
             // Calculate horizontal distance from explosion center
-            val horizontalDistance = kotlin.math.abs(x - position.x)
+            val horizontalDistance = abs(x - position.x)
 
             // Only deform terrain within the blast radius
             if (horizontalDistance <= blastRadius) {
@@ -674,10 +681,10 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 val currentHeight = terrainHeights[x] ?: continue
 
                 // Get vertical distance from explosion to terrain
-                val verticalDistance = kotlin.math.max(0f, currentHeight - position.y)
+                val verticalDistance = max(0f, currentHeight - position.y)
 
                 // Calculate actual distance from explosion center to terrain point
-                val actualDistance = kotlin.math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance)
+                val actualDistance = sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance)
 
                 // Only deform if the actual distance is within the blast radius
                 if (actualDistance <= blastRadius) {
@@ -799,7 +806,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         val newMiniBombs = mutableListOf<Projectile>()
 
         // Calculate the original projectile's direction angle
-        val originalAngleRadians = kotlin.math.atan2(parentVelocity.y, parentVelocity.x)
+        val originalAngleRadians = atan2(parentVelocity.y, parentVelocity.x)
         val originalAngleDegrees = originalAngleRadians * 180f / PI.toFloat()
 
         // Set spread angle for sub-projectiles
@@ -818,7 +825,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
             // Calculate velocity with a base speed slightly higher than the parent
             val speedMultiplier = 0.8f + Random.nextFloat() * 0.4f // 80-120% of parent speed
-            val parentSpeed = kotlin.math.sqrt(parentVelocity.x * parentVelocity.x + parentVelocity.y * parentVelocity.y)
+            val parentSpeed = sqrt(parentVelocity.x * parentVelocity.x + parentVelocity.y * parentVelocity.y)
             val speed = parentSpeed * speedMultiplier
 
             val velocity = Offset(
@@ -918,49 +925,3 @@ enum class ProjectileType(
     MIRV("MIRV", 15, 40, 80f, 3500)
 }
 
-/**
- * Represents a player in the game.
- */
-data class Player(
-    val position: Offset,
-    val color: androidx.compose.ui.graphics.Color,
-    var health: Int = 100,
-    var angle: Float = 45f,
-    var power: Float = 50f,
-    var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
-    var money: Int = 1000,
-    val inventory: Inventory = Inventory()
-)
-
-/**
- * Represents a projectile in flight.
- * @param position Current position of the projectile
- * @param velocity Current velocity of the projectile
- * @param type The type of projectile
- * @param minDamage Minimum damage dealt at the outer edge of the blast radius
- * @param maxDamage Maximum damage dealt on direct hit
- * @param blastRadius Radius of the explosion when the projectile hits
- * @param trail List of previous positions to create a trail effect
- * @param maxTrailLength Maximum number of positions to keep in the trail
- */
-data class Projectile(
-    val position: Offset,
-    val velocity: Offset,
-    val type: ProjectileType,
-    val minDamage: Int = type.minDamage,
-    val maxDamage: Int = type.maxDamage,
-    val blastRadius: Float = type.blastRadius,
-    val trail: List<Offset> = listOf(),
-    val maxTrailLength: Int = 15
-)
-
-/**
- * Represents an explosion when a projectile hits something.
- */
-data class Explosion(
-    val position: Offset,
-    val initialRadius: Float = 10f,
-    val maxRadius: Float,
-    val currentRadius: Float = initialRadius,
-    val timeRemaining: Float
-)

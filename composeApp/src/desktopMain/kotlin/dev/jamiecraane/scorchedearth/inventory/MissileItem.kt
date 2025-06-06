@@ -25,7 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.jamiecraane.scorchedearth.ProjectileType
+import dev.jamiecraane.scorchedearth.engine.ProjectileType
 
 /**
  * Composable function to display a missile item in the grid.

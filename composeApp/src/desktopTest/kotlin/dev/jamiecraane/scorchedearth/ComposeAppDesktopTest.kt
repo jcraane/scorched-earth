@@ -1,5 +1,6 @@
 package dev.jamiecraane.scorchedearth
 
+import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

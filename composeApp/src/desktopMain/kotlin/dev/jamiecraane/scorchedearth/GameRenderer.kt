@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import kotlin.math.cos
 import kotlin.math.sin
 
