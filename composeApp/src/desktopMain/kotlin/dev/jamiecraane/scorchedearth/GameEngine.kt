@@ -242,19 +242,22 @@ class ScorchedEarthGame {
             // Create a new projectile instance to trigger recomposition
             projectile = Projectile(
                 position = newPosition,
-                velocity = newVelocity
+                velocity = newVelocity,
+                minDamage = proj.minDamage,
+                maxDamage = proj.maxDamage,
+                blastRadius = proj.blastRadius
             )
 
             // Check for collision with boundaries
             if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
-                createExplosion(newPosition)
+                createExplosion(newPosition, projectile)
                 endProjectileFlight()
                 return@let
             }
 
             // Check for collision with terrain
             if (isCollidingWithTerrain(newPosition)) {
-                createExplosion(newPosition)
+                createExplosion(newPosition, projectile)
                 endProjectileFlight()
                 return@let
             }
@@ -263,10 +266,11 @@ class ScorchedEarthGame {
             for ((index, player) in players.withIndex()) {
                 if (isCollidingWithPlayer(newPosition, player)) {
                     // Create explosion at player's position
-                    createExplosion(player.position)
+                    createExplosion(player.position, projectile)
 
-                    // Apply direct hit damage (100 health)
-                    applyDamageToPlayer(index, 100)
+                    // Apply direct hit damage (use projectile's maxDamage for direct hit)
+                    val damage = projectile?.maxDamage ?: 100
+                    applyDamageToPlayer(index, damage)
 
                     endProjectileFlight()
                     return@let
@@ -365,9 +369,10 @@ class ScorchedEarthGame {
     /**
      * Creates an explosion at the specified position.
      * @param position The position of the explosion
+     * @param proj The projectile that caused the explosion (null for other explosion sources)
      */
-    private fun createExplosion(position: Offset) {
-        val explosionRadius = 90f // 3 times bigger than the original 30f
+    private fun createExplosion(position: Offset, proj: Projectile? = null) {
+        val explosionRadius = proj?.blastRadius ?: 90f
         explosion = Explosion(
             position = position,
             initialRadius = 10f, // Start with a small radius
@@ -381,7 +386,7 @@ class ScorchedEarthGame {
         }
 
         // Check for players within blast radius and apply damage
-        applyBlastDamageToPlayers(position, explosionRadius)
+        applyBlastDamageToPlayers(position, explosionRadius, proj)
     }
 
     /**
@@ -389,8 +394,13 @@ class ScorchedEarthGame {
      * Damage decreases with distance from explosion center.
      * @param explosionPosition The center of the explosion
      * @param blastRadius The radius of the explosion
+     * @param projectile The projectile that caused the explosion (null for other explosion sources)
      */
-    private fun applyBlastDamageToPlayers(explosionPosition: Offset, blastRadius: Float) {
+    private fun applyBlastDamageToPlayers(explosionPosition: Offset, blastRadius: Float, projectile: Projectile? = null) {
+        // Get damage values from projectile or use defaults
+        val minDamage = projectile?.minDamage ?: 10
+        val maxDamage = projectile?.maxDamage ?: 100
+
         // Check each player
         players.forEachIndexed { index, player ->
             // Calculate distance from player to explosion
@@ -402,12 +412,12 @@ class ScorchedEarthGame {
             // Only apply damage if player is within blast radius
             if (distance <= blastRadius) {
                 // Calculate damage based on distance (closer = more damage)
-                // Using a linear falloff: damage = maxDamage * (1 - distance/radius)
+                // Using a linear falloff between maxDamage (direct hit) and minDamage (edge of blast)
                 val distanceRatio = distance / blastRadius
                 val damageFactor = 1.0f - distanceRatio
 
-                // Maximum damage at center is 100, minimum at edge is 0
-                val damage = (100 * damageFactor).toInt()
+                // Calculate damage: at center (distanceRatio=0) = maxDamage, at edge (distanceRatio=1) = minDamage
+                val damage = (minDamage + (maxDamage - minDamage) * damageFactor).toInt()
 
                 // Apply damage if it's greater than 0
                 if (damage > 0) {
@@ -539,7 +549,10 @@ class ScorchedEarthGame {
 
         projectile = Projectile(
             position = Offset(player.position.x, player.position.y - 20f),
-            velocity = velocity
+            velocity = velocity,
+            minDamage = 10,
+            maxDamage = 100,
+            blastRadius = 90f
         )
 
         gameState = GameState.PROJECTILE_IN_FLIGHT
@@ -569,10 +582,18 @@ data class Player(
 
 /**
  * Represents a projectile in flight.
+ * @param position Current position of the projectile
+ * @param velocity Current velocity of the projectile
+ * @param minDamage Minimum damage dealt at the outer edge of the blast radius
+ * @param maxDamage Maximum damage dealt on direct hit
+ * @param blastRadius Radius of the explosion when the projectile hits
  */
 data class Projectile(
     val position: Offset,
-    val velocity: Offset
+    val velocity: Offset,
+    val minDamage: Int = 10,
+    val maxDamage: Int = 100,
+    val blastRadius: Float = 90f
 )
 
 /**
