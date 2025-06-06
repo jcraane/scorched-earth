@@ -172,11 +172,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         val segmentWidth = width / segments
 
         // Calculate variance factors based on terrainVariance (0-100)
-        // At terrainVariance = 25, we want the original behavior (sine amplitude 50, random up to 30)
         // At terrainVariance = 0, we want flat terrain (sine amplitude 0, random 0)
-        // At terrainVariance = 100, we want extreme terrain (sine amplitude 200, random up to 120)
-        val sineAmplitude = terrainVarianceState * 2f  // 0-200 range (50 at terrainVariance=25)
-        val randomFactor = terrainVarianceState * 1.2f  // 0-120 range (30 at terrainVariance=25)
+        // At terrainVariance = 25, we want moderate terrain
+        // At terrainVariance = 100, we want extremely dramatic terrain
+
+        // Use quadratic scaling to make higher variance values create more dramatic terrain
+        // This makes the effect more pronounced at higher settings
+        val normalizedVariance = terrainVarianceState / 100f
+        val quadraticFactor = normalizedVariance * normalizedVariance * 3f // Amplify the quadratic effect
+
+        // Combine linear and quadratic effects for a balanced but dramatic curve
+        val sineAmplitude = terrainVarianceState * 2f * (1f + quadraticFactor)  // More dramatic sine wave amplitude
+        val randomFactor = terrainVarianceState * 1.2f * (1f + quadraticFactor)  // More dramatic random variations
 
         // Create a map to store terrain heights
         val heights = mutableMapOf<Float, Float>()
