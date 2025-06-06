@@ -460,8 +460,14 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
             }
 
             // Create a new projectile instance to trigger recomposition
-            // Add current position to the trail and maintain max trail length
-            val updatedTrail = (proj.trail + proj.position).takeLast(proj.maxTrailLength)
+            // Add current position to the trail
+            // For Tracers, keep the entire trail without limiting length
+            // For other projectiles, maintain max trail length
+            val updatedTrail = if (proj.type == ProjectileType.TRACER) {
+                proj.trail + proj.position
+            } else {
+                (proj.trail + proj.position).takeLast(proj.maxTrailLength)
+            }
 
             projectile = Projectile(
                 position = newPosition,
