@@ -1237,7 +1237,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
                 type = parentProjectile.type,
                 minDamage = parentProjectile.minDamage / 2,
                 maxDamage = parentProjectile.maxDamage / 2,
-                blastRadius = parentProjectile.blastRadius * 0.7f,
+                blastRadius = parentProjectile.blastRadius * 3.0f, // Tripled blast radius at highest point
                 trail = listOf() // Start with empty trail
             )
 

@@ -1,0 +1,10 @@
+- ✅mirv more damage when explodes into smaller bombs
+- fall damage
+- when tracer is fired, player can fire waepon after that or trace but then turn is over
+- shield
+- number of rounds
+- money earn scheme
+  - player kills other player -> 2500
+  - player deals damage: damage * 20
+  - player wins round: 1000 * number of players (player who was before that player 1000 * number of players - 1 etc)
+- summary window between each round
