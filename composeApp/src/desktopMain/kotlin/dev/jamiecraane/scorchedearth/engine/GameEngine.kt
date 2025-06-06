@@ -61,7 +61,20 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         gameWidth = width
         gameHeight = height
         terrain = generateTerrain(width, height)
+
+        // Store player names before regenerating players
+        val playerNames = players.map { it.name }
+
+        // Regenerate players
         players = generatePlayers(width, height, numberOfPlayers)
+
+        // Restore player names
+        players.forEachIndexed { index, player ->
+            if (index < playerNames.size) {
+                player.name = playerNames[index]
+            }
+        }
+
         // Update player positions to stick to the terrain
         updatePlayerPositions()
         // Reset projectile and explosion if they exist to prevent out-of-bounds issues
