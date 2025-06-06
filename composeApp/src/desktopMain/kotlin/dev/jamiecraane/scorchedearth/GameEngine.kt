@@ -14,17 +14,18 @@ import kotlin.random.Random
  * Main game engine class that manages the game state and logic.
  */
 class ScorchedEarthGame {
+    // Game dimensions - these will be updated when the canvas size changes
+    var gameWidth by mutableStateOf(1600f)
+    var gameHeight by mutableStateOf(1200f)
+
     // Game state
     var gameState by mutableStateOf(GameState.WAITING_FOR_PLAYER)
 
     // Terrain data
-    var terrain by mutableStateOf(generateTerrain(800, 600))
+    var terrain by mutableStateOf(generateTerrain(gameWidth, gameHeight))
 
     // Players
-    var players by mutableStateOf(listOf(
-        Player(position = Offset(100f, 0f), color = androidx.compose.ui.graphics.Color.Red),
-        Player(position = Offset(700f, 0f), color = androidx.compose.ui.graphics.Color.Blue)
-    ))
+    var players by mutableStateOf(generatePlayers(gameWidth, gameHeight))
 
     // Current player index
     var currentPlayerIndex by mutableStateOf(0)
@@ -34,6 +35,39 @@ class ScorchedEarthGame {
 
     // Projectile state
     var projectile by mutableStateOf<Projectile?>(null)
+
+    /**
+     * Updates the game dimensions and regenerates content accordingly.
+     * Call this when the window/canvas size changes.
+     */
+    fun updateDimensions(width: Float, height: Float) {
+        gameWidth = width
+        gameHeight = height
+        terrain = generateTerrain(width, height)
+        players = generatePlayers(width, height)
+        // Reset projectile if it exists to prevent out-of-bounds issues
+        if (projectile != null) {
+            projectile = null
+            gameState = GameState.WAITING_FOR_PLAYER
+        }
+    }
+
+    /**
+     * Generates players with positions scaled to the current game dimensions.
+     */
+    private fun generatePlayers(width: Float, height: Float): List<Player> {
+        val baseY = height * 0.7f - 20f
+        return listOf(
+            Player(
+                position = Offset(width * 0.1f, baseY), // 10% from left edge
+                color = androidx.compose.ui.graphics.Color.Red
+            ),
+            Player(
+                position = Offset(width * 0.9f, baseY), // 10% from right edge
+                color = androidx.compose.ui.graphics.Color.Blue
+            )
+        )
+    }
 
     /**
      * Generates a random wind speed and direction.
@@ -49,14 +83,14 @@ class ScorchedEarthGame {
      * @param height Height of the game area
      * @return A Path object representing the terrain
      */
-    private fun generateTerrain(width: Int, height: Int): Path {
+    private fun generateTerrain(width: Float, height: Float): Path {
         val path = Path()
         val baseHeight = height * 0.7f
         val segments = 100
-        val segmentWidth = width.toFloat() / segments
+        val segmentWidth = width / segments
 
         // Start at the left edge
-        path.moveTo(0f, height.toFloat())
+        path.moveTo(0f, height)
         path.lineTo(0f, baseHeight + Random.nextFloat() * 50f)
 
         // Generate terrain points
@@ -67,7 +101,7 @@ class ScorchedEarthGame {
         }
 
         // Close the path at the bottom
-        path.lineTo(width.toFloat(), height.toFloat())
+        path.lineTo(width, height)
         path.close()
 
         return path
@@ -103,11 +137,8 @@ class ScorchedEarthGame {
                 proj.position.y + proj.velocity.y * deltaTime
             )
 
-            // Check for collision with terrain or boundaries
-            // This will be implemented in Phase 3
-
-            // For now, just check if projectile is out of bounds
-            if (proj.position.x < 0 || proj.position.x > 800 || proj.position.y > 600) {
+            // Check for collision with terrain or boundaries using current game dimensions
+            if (proj.position.x < 0 || proj.position.x > gameWidth || proj.position.y > gameHeight) {
                 projectile = null
                 gameState = GameState.WAITING_FOR_PLAYER
                 // Switch to next player
