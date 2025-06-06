@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import dev.jamiecraane.scorchedearth.inventory.Inventory
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
