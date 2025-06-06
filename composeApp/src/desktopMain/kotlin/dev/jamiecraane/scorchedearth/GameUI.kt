@@ -98,8 +98,8 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Angle: ${game.players[game.currentPlayerIndex].angle.toInt()}°",
-                    modifier = Modifier.width(100.dp),
+                Text("Angle: ${game.players[game.currentPlayerIndex].angle.toInt()}° (0=right)",
+                    modifier = Modifier.width(150.dp),
                     color = Color.White)
                 Slider(
                     value = game.players[game.currentPlayerIndex].angle,
@@ -108,7 +108,7 @@ fun GameUI(game: ScorchedEarthGame, initialCanvasSize: androidx.compose.ui.geome
                         players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(angle = it)
                         game.players = players
                     },
-                    valueRange = 0f..90f,
+                    valueRange = -90f..90f,
                     modifier = Modifier.weight(1f)
                 )
             }

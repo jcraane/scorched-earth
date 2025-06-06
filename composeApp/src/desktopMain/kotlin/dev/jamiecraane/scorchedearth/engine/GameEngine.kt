@@ -853,7 +853,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
 
     /**
      * Fires a projectile with the given angle and power.
-     * @param angle Angle in degrees (0 = right, 90 = up)
+     * @param angle Angle in degrees (-90 to 90, where 0 = horizontal, -90 = down, 90 = up)
      * @param power Power factor (0-100)
      * @return True if the projectile was fired successfully, false otherwise
      */
@@ -868,7 +868,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
         // Remove one projectile from inventory
         player.inventory.removeItem(player.selectedProjectileType, 1)
 
-        val angleRadians = angle * PI.toFloat() / 180f
+        // Rotate the angle by 90 degrees to make 0 point right, -90 point down, and 90 point up
+        val rotatedAngle = angle + 90f
+        val angleRadians = rotatedAngle * PI.toFloat() / 180f
 
         // Determine direction multiplier based on player position
         // Players on the left half of the screen fire right (positive direction)
@@ -924,4 +926,3 @@ enum class ProjectileType(
     FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 3000),
     MIRV("MIRV", 15, 40, 80f, 3500)
 }
-
