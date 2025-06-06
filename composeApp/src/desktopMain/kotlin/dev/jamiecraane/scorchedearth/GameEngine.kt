@@ -127,18 +127,24 @@ class ScorchedEarthGame {
             // Update projectile position based on velocity and gravity
             val gravity = 9.8f * 30f // Scaled gravity
 
-            proj.velocity = Offset(
+            val newVelocity = Offset(
                 proj.velocity.x + wind * deltaTime,
                 proj.velocity.y + gravity * deltaTime
             )
 
-            proj.position = Offset(
-                proj.position.x + proj.velocity.x * deltaTime,
-                proj.position.y + proj.velocity.y * deltaTime
+            val newPosition = Offset(
+                proj.position.x + newVelocity.x * deltaTime,
+                proj.position.y + newVelocity.y * deltaTime
+            )
+
+            // Create a new projectile instance to trigger recomposition
+            projectile = Projectile(
+                position = newPosition,
+                velocity = newVelocity
             )
 
             // Check for collision with terrain or boundaries using current game dimensions
-            if (proj.position.x < 0 || proj.position.x > gameWidth || proj.position.y > gameHeight) {
+            if (newPosition.x < 0 || newPosition.x > gameWidth || newPosition.y > gameHeight) {
                 projectile = null
                 gameState = GameState.WAITING_FOR_PLAYER
                 // Switch to next player
@@ -194,6 +200,6 @@ data class Player(
  * Represents a projectile in flight.
  */
 data class Projectile(
-    var position: Offset,
-    var velocity: Offset
+    val position: Offset,
+    val velocity: Offset
 )
