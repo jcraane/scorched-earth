@@ -244,6 +244,21 @@ class ScorchedEarthGame(
         when (gameState) {
             GameState.PROJECTILE_IN_FLIGHT -> updateProjectile(deltaTime)
             GameState.WAITING_FOR_PLAYER -> {
+                // Check if current player is dead, if so, move to the next alive player
+                if (players[currentPlayerIndex].health <= 0) {
+                    // Find the next alive player
+                    var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
+                    while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
+                        nextPlayerIndex = (nextPlayerIndex + 1) % players.size
+                    }
+
+                    // If we found an alive player, set them as the current player
+                    if (nextPlayerIndex != currentPlayerIndex || players[nextPlayerIndex].health > 0) {
+                        currentPlayerIndex = nextPlayerIndex
+                        println("[DEBUG_LOG] Skipping dead player, switching to next player ${players[currentPlayerIndex].name}")
+                    }
+                }
+
                 // Check if current player is CPU
                 val currentPlayer = players[currentPlayerIndex]
                 if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU) {
@@ -359,10 +374,19 @@ class ScorchedEarthGame(
         if (miniBombs.isEmpty() && projectile == null && gameState == GameState.PROJECTILE_IN_FLIGHT) {
             // All projectiles and mini-bombs are gone, move to next player
             gameState = GameState.WAITING_FOR_PLAYER
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+
+            // Find the next alive player
+            var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
+            while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
+                nextPlayerIndex = (nextPlayerIndex + 1) % players.size
+            }
+
+            // Set the next player
+            currentPlayerIndex = nextPlayerIndex
+
             // Reset the tracer flag for the new player
             hasPlayerFiredTracerThisTurn = false
-            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player")
+            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player ${players[currentPlayerIndex].name}")
         }
     }
 
@@ -868,24 +892,31 @@ class ScorchedEarthGame(
 
         // Check if player is eliminated
         if (newHealth <= 0) {
-            // Remove the player from the list
-            updatedPlayers.removeAt(playerIndex)
-
-            // Adjust current player index if necessary
-            if (currentPlayerIndex >= updatedPlayers.size) {
-                currentPlayerIndex = 0
-            } else if (playerIndex <= currentPlayerIndex && currentPlayerIndex > 0) {
-                currentPlayerIndex--
-            }
+            // Count how many players are still alive
+            val alivePlayers = updatedPlayers.count { it.health > 0 }
 
             // Check for round completion condition
-            if (updatedPlayers.size <= 1) {
+            if (alivePlayers <= 1) {
                 if (currentRound >= totalRoundsState) {
                     // All rounds completed, game over
                     gameState = GameState.GAME_OVER
                 } else {
                     // Transition to next round
                     transitionToNextRound()
+                }
+            }
+
+            // If it's the current player's turn and they died, move to the next player
+            if (playerIndex == currentPlayerIndex) {
+                // Find the next alive player
+                var nextPlayerIndex = (currentPlayerIndex + 1) % updatedPlayers.size
+                while (nextPlayerIndex != currentPlayerIndex && updatedPlayers[nextPlayerIndex].health <= 0) {
+                    nextPlayerIndex = (nextPlayerIndex + 1) % updatedPlayers.size
+                }
+
+                // If we found an alive player, set them as the current player
+                if (nextPlayerIndex != currentPlayerIndex || updatedPlayers[nextPlayerIndex].health > 0) {
+                    currentPlayerIndex = nextPlayerIndex
                 }
             }
         }
@@ -1182,31 +1213,34 @@ class ScorchedEarthGame(
         // Regenerate terrain
         terrain = generateTerrain(gameWidth, gameHeight)
 
-        // Store player names, types, and other persistent data
-        val playerNames = players.map { it.name }
-        val playerTypes = players.map { it.type }
-        val playerMoney = players.map { it.money }
+        // Store player names, types, and other persistent data from existing players
+        val existingPlayerData = mutableMapOf<Int, Triple<String, dev.jamiecraane.scorchedearth.model.PlayerType, Int>>()
+        val existingPlayerInventories = mutableMapOf<Int, List<Item>>()
 
-        // Create a copy of each player's inventory items
-        val playerInventories = mutableListOf<List<Item>>()
-        for (player in players) {
+        // Save data from existing players
+        players.forEachIndexed { index, player ->
+            existingPlayerData[index] = Triple(player.name, player.type, player.money)
+
             val inventoryItems = mutableListOf<Item>()
             val items = player.inventory.getAllItems()
             for (item in items) {
                 inventoryItems.add(Item(item.type, item.quantity))
             }
-            playerInventories.add(inventoryItems)
+            existingPlayerInventories[index] = inventoryItems
         }
 
-        // Regenerate players
+        // Regenerate all players based on the original numberOfPlayers
         players = generatePlayers(gameWidth, gameHeight, numberOfPlayers)
 
-        // Restore player names, types, and other persistent data
+        // Restore player data for all players
         players.forEachIndexed { index, player ->
-            if (index < playerNames.size) {
-                player.name = playerNames[index]
-                player.type = playerTypes[index]
-                player.money = playerMoney[index]
+            // If we have saved data for this player index, restore it
+            existingPlayerData[index]?.let { (name, type, money) ->
+                player.name = name
+                player.type = type
+                player.money = money
+                // Make sure player health is reset to full (100)
+                player.health = 100
 
                 // Transfer items from old inventory to new inventory
                 // First clear any default items
@@ -1215,9 +1249,8 @@ class ScorchedEarthGame(
                     player.inventory.removeItem(item.type, item.quantity)
                 }
 
-                // Then add all items from the old inventory
-                val oldInventoryItems = playerInventories[index]
-                for (item in oldInventoryItems) {
+                // Then add all items from the old inventory if we have them
+                existingPlayerInventories[index]?.forEach { item ->
                     player.inventory.addItem(item.type, item.quantity)
                 }
             }
@@ -1256,10 +1289,18 @@ class ScorchedEarthGame(
                 println("[DEBUG_LOG] Tracer fired, player can fire again")
             } else {
                 // Not a tracer or player has already fired a tracer - switch to next player
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+                // Find the next alive player
+                var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
+                while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
+                    nextPlayerIndex = (nextPlayerIndex + 1) % players.size
+                }
+
+                // Set the next player
+                currentPlayerIndex = nextPlayerIndex
+
                 // Reset the tracer flag for the new player
                 hasPlayerFiredTracerThisTurn = false
-                println("[DEBUG_LOG] Turn ended, switching to next player")
+                println("[DEBUG_LOG] Turn ended, switching to next player ${players[currentPlayerIndex].name}")
             }
         } else {
             // Keep the game state as PROJECTILE_IN_FLIGHT while mini-bombs are active

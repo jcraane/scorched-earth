@@ -114,4 +114,61 @@ class ComposeAppDesktopTest {
         // when the game is actually played.
         println("[DEBUG_LOG] Test completed - terrain deformation functionality is implemented")
     }
+    @Test
+    fun testDeadPlayersReappearInNewRounds() {
+        // Create a game instance with 2 rounds
+        val game = ScorchedEarthGame(numberOfPlayers = 3, totalRounds = 2)
+
+        // Set fixed dimensions for consistent testing
+        game.updateDimensions(1000f, 800f)
+
+        // Verify initial state
+        assertEquals(3, game.players.size)
+        assertEquals(1, game.currentRound)
+
+        // Set player names for easier identification
+        val players = game.players.toMutableList()
+        players[0] = players[0].copy(name = "Player 1")
+        players[1] = players[1].copy(name = "Player 2")
+        players[2] = players[2].copy(name = "Player 3")
+        game.players = players
+
+        // Verify all players are alive
+        game.players.forEach { player ->
+            assertEquals(100, player.health)
+            println("[DEBUG_LOG] Initial state: ${player.name} health = ${player.health}")
+        }
+
+        // Kill player 2
+        game.applyDamageToPlayer(1, 100)
+
+        // Verify player 2 is dead but still in the list
+        assertEquals(3, game.players.size)
+        assertEquals(0, game.players[1].health)
+        println("[DEBUG_LOG] After damage: ${game.players[1].name} health = ${game.players[1].health}")
+
+        // Kill player 3
+        game.applyDamageToPlayer(2, 100)
+
+        // Verify player 3 is dead but still in the list
+        assertEquals(3, game.players.size)
+        assertEquals(0, game.players[2].health)
+        println("[DEBUG_LOG] After damage: ${game.players[2].name} health = ${game.players[2].health}")
+
+        // This should trigger a round transition since only one player is alive
+        // Manually call transitionToNextRound to ensure it happens
+        game.transitionToNextRound()
+
+        // Verify we're in round 2
+        assertEquals(2, game.currentRound)
+
+        // Verify all players are alive again
+        assertEquals(3, game.players.size)
+        game.players.forEach { player ->
+            assertEquals(100, player.health)
+            println("[DEBUG_LOG] After round transition: ${player.name} health = ${player.health}")
+        }
+
+        println("[DEBUG_LOG] Test completed - dead players reappear in new rounds")
+    }
 }
