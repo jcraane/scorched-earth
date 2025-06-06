@@ -2,12 +2,25 @@ package dev.jamiecraane.scorchedearth
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -16,7 +29,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -28,6 +40,9 @@ import kotlin.math.sin
 fun App() {
     // Create a game instance to manage state
     val game = remember { ScorchedEarthGame() }
+
+    // Track canvas size to detect changes
+    var canvasSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
     // Game loop using LaunchedEffect
     LaunchedEffect(Unit) {
@@ -50,7 +65,12 @@ fun App() {
     ) {
         // Game canvas where all rendering happens
         Canvas(modifier = Modifier.fillMaxSize()) {
-            game.updateDimensions(size.width, size.height)
+            // Only update dimensions when canvas size actually changes
+            if (canvasSize != size) {
+                canvasSize = size
+                game.updateDimensions(size.width, size.height)
+            }
+
             // Draw the game elements
             drawGame(game)
         }
@@ -79,8 +99,8 @@ fun App() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Angle: ${game.players[game.currentPlayerIndex].angle.toInt()}°",
-                     modifier = Modifier.width(100.dp),
-                     color = Color.White)
+                    modifier = Modifier.width(100.dp),
+                    color = Color.White)
                 Slider(
                     value = game.players[game.currentPlayerIndex].angle,
                     onValueChange = {
@@ -99,8 +119,8 @@ fun App() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Power: ${game.players[game.currentPlayerIndex].power.toInt()}",
-                     modifier = Modifier.width(100.dp),
-                     color = Color.White)
+                    modifier = Modifier.width(100.dp),
+                    color = Color.White)
                 Slider(
                     value = game.players[game.currentPlayerIndex].power,
                     onValueChange = {
@@ -132,10 +152,6 @@ fun App() {
 
 // Function to draw all game elements
 private fun DrawScope.drawGame(game: ScorchedEarthGame) {
-    // Calculate scale factors based on the actual canvas size
-//    val scaleX = size.width / width.toFloat()
-//    val scaleY = size.height / height.toFloat()
-
     // Scale all game elements to match the canvas size
     scale(scaleX = 1f, scaleY = 1f) {
         // Draw terrain
