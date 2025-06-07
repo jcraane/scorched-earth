@@ -2,8 +2,7 @@
 - ✅when tracer is fired, player can fire waepon after that or trace but then turn is over
 - ✅number of rounds
 - ✅Advance to next round (check if player is reset)
-- Summary screen after all rounds
-- Final summary screen between all rounds
+- ✅Final summary screen between all rounds
 - fall damage
 - shield
 - money earn scheme
@@ -15,6 +14,6 @@
 - ✅mirv to high blast radius of projectiles
 - ✅player does not fall down
 - ✅tracer does not work anymore
-- tank graphic
+- ✅tank graphic
 - tank should stand on bottom if no terrain is present
 - sounds

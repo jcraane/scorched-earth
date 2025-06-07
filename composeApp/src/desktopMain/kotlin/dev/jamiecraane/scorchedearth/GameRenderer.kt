@@ -75,21 +75,12 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
 
         // Draw players (tanks)
         game.players.forEachIndexed { index, player ->
-            // Draw tank body
-            drawCircle(
-                color = player.color,
-                radius = 15f,
-                center = player.position
-            )
+            // Determine the direction based on player position
+            val isOnRightSide = player.position.x > game.gameWidth / 2
 
-            // Draw tank cannon
             // Rotate the angle by 90 degrees to make 0 point right, -90 point up, and 90 point down
             val rotatedAngle = player.angle + 90f
             val angleRadians = rotatedAngle * Math.PI.toFloat() / 180f
-            val cannonLength = 30f
-
-            // Determine the direction based on player position
-            val isOnRightSide = player.position.x > game.gameWidth / 2
 
             // For players on the right side, we need to flip the angle to face left
             val adjustedAngleRadians = if (isOnRightSide) {
@@ -99,12 +90,48 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
                 angleRadians
             }
 
-            drawLine(
+            // Tank dimensions
+            val tankWidth = 30f
+            val tankHeight = 15f
+            val turretRadius = 10f
+            val cannonLength = 25f
+            val trackHeight = 5f
+
+            // Tank position (center of the tank body)
+            val tankX = player.position.x
+            val tankY = player.position.y
+
+            // Draw tank tracks (two rectangles)
+            val trackColor = Color.DarkGray
+
+            // Left track
+            drawRect(
+                color = trackColor,
+                topLeft = Offset(tankX - tankWidth / 2, tankY + tankHeight / 2 - trackHeight),
+                size = Size(tankWidth, trackHeight)
+            )
+
+            // Draw tank body (hull)
+            drawRect(
                 color = player.color,
-                start = player.position,
+                topLeft = Offset(tankX - tankWidth / 2, tankY - tankHeight / 2),
+                size = Size(tankWidth, tankHeight)
+            )
+
+            // Draw tank turret (circle on top of the body)
+            drawCircle(
+                color = player.color.copy(alpha = 0.8f),
+                radius = turretRadius,
+                center = Offset(tankX, tankY - 2f)
+            )
+
+            // Draw tank cannon
+            drawLine(
+                color = player.color.copy(alpha = 0.9f),
+                start = Offset(tankX, tankY - 2f),
                 end = Offset(
-                    player.position.x + cos(adjustedAngleRadians) * cannonLength,
-                    player.position.y - sin(adjustedAngleRadians) * cannonLength
+                    tankX + cos(adjustedAngleRadians) * cannonLength,
+                    (tankY - 2f) - sin(adjustedAngleRadians) * cannonLength
                 ),
                 strokeWidth = 5f,
                 cap = StrokeCap.Round
@@ -112,10 +139,10 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
 
             // Highlight current player
             if (index == game.currentPlayerIndex) {
-                drawCircle(
+                drawRect(
                     color = Color.Yellow,
-                    radius = 20f,
-                    center = player.position,
+                    topLeft = Offset(tankX - tankWidth / 2 - 3f, tankY - tankHeight / 2 - 3f),
+                    size = Size(tankWidth + 6f, tankHeight + trackHeight + 6f),
                     style = Stroke(width = 2f)
                 )
             }
