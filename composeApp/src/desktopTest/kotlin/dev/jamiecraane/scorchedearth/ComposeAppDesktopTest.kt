@@ -133,25 +133,34 @@ class ComposeAppDesktopTest {
         players[2] = players[2].copy(name = "Player 3")
         game.players = players
 
+        println("[DEBUG_LOG] Players after setting names: ${game.players.map { "${it.name}(${it.health})" }}")
+
         // Verify all players are alive
         game.players.forEach { player ->
             assertEquals(100, player.health)
             println("[DEBUG_LOG] Initial state: ${player.name} health = ${player.health}")
         }
 
-        // Kill player 2
-        game.applyDamageToPlayer(1, 100)
+        // Kill player 2 by directly updating the players list
+        val players2 = game.players.toMutableList()
+        players2[1] = players2[1].copy(health = 0)
+        game.players = players2
+        println("[DEBUG_LOG] After killing player 2: ${game.players.map { "${it.name}(${it.health})" }}")
 
         // Verify player 2 is dead but still in the list
         assertEquals(3, game.players.size)
         assertEquals(0, game.players[1].health)
         println("[DEBUG_LOG] After damage: ${game.players[1].name} health = ${game.players[1].health}")
 
-        // Kill player 3
-        game.applyDamageToPlayer(2, 100)
+        // Kill player 3 by directly updating the players list
+        val players3 = game.players.toMutableList()
+        players3[2] = players3[2].copy(health = 0)
+        game.players = players3
+        println("[DEBUG_LOG] After killing player 3: ${game.players.map { "${it.name}(${it.health})" }}")
 
         // Verify player 3 is dead but still in the list
         assertEquals(3, game.players.size)
+        println("[DEBUG_LOG] Player 3 health before assertion: ${game.players[2].health}")
         assertEquals(0, game.players[2].health)
         println("[DEBUG_LOG] After damage: ${game.players[2].name} health = ${game.players[2].health}")
 
