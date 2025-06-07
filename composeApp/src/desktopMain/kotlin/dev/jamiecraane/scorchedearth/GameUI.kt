@@ -151,6 +151,15 @@ fun GameUI(
             )
         }
 
+        // Game over statistics dialog
+        if (game.gameState == GameState.GAME_OVER) {
+            GameStatistics(
+                totalRounds = game.totalRounds,
+                players = game.players,
+                onBackToIntroClick = onBackToIntro
+            )
+        }
+
         PlayerControls(
             game,
             Modifier.align(Alignment.BottomCenter)

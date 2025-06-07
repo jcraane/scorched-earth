@@ -3,7 +3,7 @@
 - ✅number of rounds
 - ✅Advance to next round (check if player is reset)
 - Summary screen after all rounds
-- Final summary screen between every round
+- Final summary screen between all rounds
 - fall damage
 - shield
 - money earn scheme
@@ -14,6 +14,7 @@
 - ✅Blast should do more damage
 - ✅mirv to high blast radius of projectiles
 - ✅player does not fall down
-- tracer does not work anymore
+- ✅tracer does not work anymore
 - tank graphic
 - tank should stand on bottom if no terrain is present
+- sounds

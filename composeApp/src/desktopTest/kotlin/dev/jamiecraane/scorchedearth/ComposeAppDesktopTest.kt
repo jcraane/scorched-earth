@@ -238,4 +238,61 @@ class ComposeAppDesktopTest {
 
         println("[DEBUG_LOG] Test completed - game state transitions correctly after tracer impact")
     }
+
+    @Test
+    fun testGameOverStateTransition() {
+        // Create a game instance with 2 rounds
+        val game = ScorchedEarthGame(numberOfPlayers = 2, totalRounds = 2)
+
+        // Set fixed dimensions for consistent testing
+        game.updateDimensions(1000f, 800f)
+
+        // Verify initial state
+        assertEquals(2, game.players.size)
+        assertEquals(1, game.currentRound)
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.WAITING_FOR_PLAYER, game.gameState)
+
+        println("[DEBUG_LOG] Initial state: Round ${game.currentRound}, GameState: ${game.gameState}")
+
+        // Kill one player to trigger round end
+        val players = game.players.toMutableList()
+        players[1] = players[1].copy(health = 0)
+        game.players = players
+
+        // Prepare for next round (this would normally happen after a player wins)
+        game.prepareNextRound()
+
+        // Verify game state is now ROUND_STATISTICS
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.ROUND_STATISTICS, game.gameState)
+        println("[DEBUG_LOG] After round 1 ends: GameState: ${game.gameState}")
+
+        // Transition to next round
+        game.transitionToNextRound()
+
+        // Verify we're in round 2
+        assertEquals(2, game.currentRound)
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.WAITING_FOR_PLAYER, game.gameState)
+        println("[DEBUG_LOG] After transition to round 2: Round ${game.currentRound}, GameState: ${game.gameState}")
+
+        // Kill one player again to trigger round end
+        val players2 = game.players.toMutableList()
+        players2[1] = players2[1].copy(health = 0)
+        game.players = players2
+
+        // Prepare for next round (this would normally happen after a player wins)
+        game.prepareNextRound()
+
+        // Verify game state is now ROUND_STATISTICS
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.ROUND_STATISTICS, game.gameState)
+        println("[DEBUG_LOG] After round 2 ends: GameState: ${game.gameState}")
+
+        // Transition to next round (which should be game over since totalRounds = 2)
+        game.transitionToNextRound()
+
+        // Verify game state is now GAME_OVER
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.GAME_OVER, game.gameState)
+        println("[DEBUG_LOG] After all rounds completed: GameState: ${game.gameState}")
+
+        println("[DEBUG_LOG] Test completed - game transitions to GAME_OVER state after all rounds are played")
+    }
 }
