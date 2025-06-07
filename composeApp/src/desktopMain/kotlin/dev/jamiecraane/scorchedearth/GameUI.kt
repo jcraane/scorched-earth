@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -26,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.inventory.InventoryButton
@@ -121,8 +119,7 @@ fun GameUI(
 
     // Main game container
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         // Game canvas where all rendering happens - placed first so it's at the bottom layer
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -138,61 +135,34 @@ fun GameUI(
                 // This read access ensures recomposition when animationTrigger changes
                 val l_ = animationTrigger
             }
+
             drawGame(game)
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                onClick = { showConfirmationDialog = true },
-                modifier = Modifier.padding(4.dp)
-            ) {
-                Text("Back")
-            }
+        Header(
+            currentRound = game.currentRound,
+            onBackButtonClick = { showConfirmationDialog = true },
+            transitionToNextRoundClick = {
+                game.prepareNextRound()
+            },
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
 
-            Text(
-                "Round: ${game.currentRound}",
-                modifier = Modifier.padding(4.dp),
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            )
+        ConfirmationDialog(
+            show = showConfirmationDialog,
+            onConfirmClick = {
+                showConfirmationDialog = false
+                onBackToIntro()
+            },
+            onDismissClick = { showConfirmationDialog = false }
+        )
 
-//            for debug purposes
-            Button(
-                onClick = { game.transitionToNextRound() },
-                modifier = Modifier.padding(4.dp)
-            ) {
-                Text("Trigger next round")
-            }
-        }
-
-        // Back button confirmation dialog
-        if (showConfirmationDialog) {
-            AlertDialog(
-                onDismissRequest = { showConfirmationDialog = false },
-                title = { Text("Return to Main Menu") },
-                text = { Text("Are you sure you want to return to the main menu? Your current game progress will be lost.") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showConfirmationDialog = false
-                            onBackToIntro()
-                        }
-                    ) {
-                        Text("Yes")
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { showConfirmationDialog = false }
-                    ) {
-                        Text("No")
-                    }
-                }
+        // Round statistics dialog
+        if (game.gameState == GameState.ROUND_STATISTICS) {
+            RoundStatistics(
+                currentRound = game.currentRound,
+                players = game.players,
+                onNextCLick = { game.transitionToNextRound()}
             )
         }
 
@@ -330,3 +300,4 @@ fun GameUI(
         }
     }
 }
+

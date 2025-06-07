@@ -85,14 +85,28 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             GameState.PROJECTILE_IN_FLIGHT -> {
                 val turnEnded = projectileManager.updateProjectile(deltaTime)
                 if (turnEnded) {
-                    gameState = GameState.WAITING_FOR_PLAYER
+                    // Check if round is over (only one player alive)
+                    val alivePlayers = players.count { it.health > 0 }
+                    if (alivePlayers <= 1) {
+                        // Round is over, show statistics
+                        prepareNextRound()
+                    } else {
+                        gameState = GameState.WAITING_FOR_PLAYER
+                    }
                 }
 
                 // Update mini-bombs if they exist
                 if (projectileManager.miniBombs.isNotEmpty()) {
                     val miniBombsTurnEnded = projectileManager.updateMiniBombs(deltaTime)
                     if (miniBombsTurnEnded) {
-                        gameState = GameState.WAITING_FOR_PLAYER
+                        // Check if round is over (only one player alive)
+                        val alivePlayers = players.count { it.health > 0 }
+                        if (alivePlayers <= 1) {
+                            // Round is over, show statistics
+                            prepareNextRound()
+                        } else {
+                            gameState = GameState.WAITING_FOR_PLAYER
+                        }
                     }
                 }
             }
@@ -108,6 +122,10 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             GameState.AIMING -> {
                 // This state is used to prevent CPU from firing multiple shots in a single frame
                 // CPU player logic is handled in the CPUPlayerController
+            }
+            GameState.ROUND_STATISTICS -> {
+                // Statistics screen is displayed, waiting for user to click "Next Round"
+                // No updates needed here
             }
             else -> {} // No updates needed for other states
         }
@@ -153,8 +171,17 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
     }
 
     /**
-     * Transitions to the next round, resetting player health and positions.
+     * Prepares to transition to the next round by showing round statistics.
      * This is called when a round ends (only one player left alive).
+     */
+    fun prepareNextRound() {
+        // Change game state to show statistics
+        gameState = GameState.ROUND_STATISTICS
+    }
+
+    /**
+     * Transitions to the next round, resetting player health and positions.
+     * This is called after the statistics screen is shown.
      */
     fun transitionToNextRound() {
         if (currentRound < totalRounds) {
@@ -184,8 +211,14 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             // Reset projectiles and explosions
             projectileManager.reset()
 
+            // Reset elimination tracking for the new round
+            playerManager.resetEliminationTracking()
+
             // Reset game state
             gameState = GameState.WAITING_FOR_PLAYER
+        } else {
+            // This was the last round, go to game over
+            gameState = GameState.GAME_OVER
         }
     }
 

@@ -167,6 +167,9 @@ class PlayerManager {
         return players.any { it.isFalling }
     }
 
+    // Track the elimination order
+    private var eliminationCount = 0
+
     /**
      * Applies damage to a player. Players with 0 health are considered dead but remain in the list.
      * @param playerIndex The index of the player to damage
@@ -190,7 +193,20 @@ class PlayerManager {
 
         // Apply damage
         val newHealth = (player.health - damage).coerceAtLeast(0)
-        updatedPlayers[playerIndex] = player.copy(health = newHealth)
+
+        // Check if player was just eliminated
+        val wasJustEliminated = player.health > 0 && newHealth == 0
+
+        // Update player with new health
+        val updatedPlayer = player.copy(health = newHealth)
+
+        // If player was just eliminated, set elimination order
+        if (wasJustEliminated) {
+            updatedPlayer.eliminationOrder = eliminationCount++
+            println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Player ${player.name} eliminated, order=${updatedPlayer.eliminationOrder}")
+        }
+
+        updatedPlayers[playerIndex] = updatedPlayer
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: New health for ${player.name}=${newHealth}")
 
         // Update the players list
@@ -203,8 +219,26 @@ class PlayerManager {
 
         // Check for game over condition - only one player alive
         val gameOver = alivePlayers <= 1
+
+        // If only one player is left alive, mark them as the last one (winner)
+        if (gameOver && alivePlayers == 1) {
+            val winner = players.first { it.health > 0 }
+            winner.eliminationOrder = players.size - 1 // Highest elimination order = winner
+            println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Winner is ${winner.name}")
+        }
+
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: gameOver=$gameOver")
         return gameOver
+    }
+
+    /**
+     * Resets the elimination tracking for a new round.
+     */
+    fun resetEliminationTracking() {
+        eliminationCount = 0
+        players = players.map {
+            it.copy(eliminationOrder = -1)
+        }
     }
 
     /**

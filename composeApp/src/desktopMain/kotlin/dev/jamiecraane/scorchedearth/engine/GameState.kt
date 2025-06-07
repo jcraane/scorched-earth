@@ -7,5 +7,6 @@ enum class GameState {
     WAITING_FOR_PLAYER,
     AIMING,
     PROJECTILE_IN_FLIGHT,
+    ROUND_STATISTICS,
     GAME_OVER
 }

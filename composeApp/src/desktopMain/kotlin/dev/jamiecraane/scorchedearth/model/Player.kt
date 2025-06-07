@@ -31,5 +31,7 @@ data class Player(
     var isFalling: Boolean = false,
     var fallStartPosition: Offset? = null,
     var fallTargetPosition: Offset? = null,
-    var fallProgress: Float = 0f
+    var fallProgress: Float = 0f,
+    // Elimination tracking
+    var eliminationOrder: Int = -1 // -1 means not eliminated yet
 )
