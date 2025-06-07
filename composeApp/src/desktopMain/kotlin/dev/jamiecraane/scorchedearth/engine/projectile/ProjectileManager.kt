@@ -189,6 +189,12 @@ class ProjectileManager(
                     handleLeapfrogBounce(newPosition, proj, newVelocity, true)
                 } else {
                     explosionManager.createExplosion(newPosition, projectile, gameWidth, gameHeight)
+
+                    // Generate mini-bombs if this is a Funky Bomb
+                    if (proj.type == ProjectileType.FUNKY_BOMB) {
+                        generateMiniBombs(newPosition, proj)
+                    }
+
                     turnEnded = endProjectileFlight()
                 }
                 return@let
@@ -218,6 +224,12 @@ class ProjectileManager(
                     handleLeapfrogBounce(newPosition, proj, newVelocity, false)
                 } else {
                     explosionManager.createExplosion(newPosition, projectile, gameWidth, gameHeight)
+
+                    // Generate mini-bombs if this is a Funky Bomb
+                    if (proj.type == ProjectileType.FUNKY_BOMB) {
+                        generateMiniBombs(newPosition, proj)
+                    }
+
                     turnEnded = endProjectileFlight()
                 }
                 return@let
@@ -232,6 +244,11 @@ class ProjectileManager(
                     } else {
                         // Create explosion at player's position
                         explosionManager.createExplosion(player.position, projectile, gameWidth, gameHeight)
+
+                        // Generate mini-bombs if this is a Funky Bomb
+                        if (proj.type == ProjectileType.FUNKY_BOMB) {
+                            generateMiniBombs(player.position, proj)
+                        }
 
                         // Apply direct hit damage (use projectile's maxDamage for direct hit)
                         val damage = if (proj.type == ProjectileType.ROLLER && proj.isRolling) {

@@ -73,8 +73,11 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
             color = Color(0xFF8B4513).copy(alpha = 0.5f) // Semi-transparent fill
         )
 
-        // Draw players (tanks)
+        // Draw players (tanks) - only render players that are alive (health > 0)
         game.players.forEachIndexed { index, player ->
+            // Skip rendering dead players
+            if (player.health <= 0) return@forEachIndexed
+
             // Determine the direction based on player position
             val isOnRightSide = player.position.x > game.gameWidth / 2
 
