@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import dev.jamiecraane.scorchedearth.inventory.Item
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.model.Explosion
 import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.Projectile
@@ -23,17 +23,10 @@ import kotlin.random.Random
 /**
  * Main game engine class that manages the game state and logic.
  */
-class ScorchedEarthGame(
-    private val numberOfPlayers: Int = 2,
-    private val totalRounds: Int = 1
-) {
+class ScorchedEarthGame(private val numberOfPlayers: Int = 2) {
     // Game dimensions - these will be updated when the canvas size changes
     var gameWidth by mutableStateOf(1600f)
     var gameHeight by mutableStateOf(1200f)
-
-    // Round tracking
-    var currentRound by mutableStateOf(1)
-    var totalRoundsState by mutableStateOf(totalRounds)
 
     // Constants for game physics
     private val rollerMinSpeedThreshold = 10.0f // Minimum speed for roller before it explodes
@@ -244,21 +237,6 @@ class ScorchedEarthGame(
         when (gameState) {
             GameState.PROJECTILE_IN_FLIGHT -> updateProjectile(deltaTime)
             GameState.WAITING_FOR_PLAYER -> {
-                // Check if current player is dead, if so, move to the next alive player
-                if (players[currentPlayerIndex].health <= 0) {
-                    // Find the next alive player
-                    var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
-                    while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
-                        nextPlayerIndex = (nextPlayerIndex + 1) % players.size
-                    }
-
-                    // If we found an alive player, set them as the current player
-                    if (nextPlayerIndex != currentPlayerIndex || players[nextPlayerIndex].health > 0) {
-                        currentPlayerIndex = nextPlayerIndex
-                        println("[DEBUG_LOG] Skipping dead player, switching to next player ${players[currentPlayerIndex].name}")
-                    }
-                }
-
                 // Check if current player is CPU
                 val currentPlayer = players[currentPlayerIndex]
                 if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU) {
@@ -374,19 +352,10 @@ class ScorchedEarthGame(
         if (miniBombs.isEmpty() && projectile == null && gameState == GameState.PROJECTILE_IN_FLIGHT) {
             // All projectiles and mini-bombs are gone, move to next player
             gameState = GameState.WAITING_FOR_PLAYER
-
-            // Find the next alive player
-            var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
-            while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
-                nextPlayerIndex = (nextPlayerIndex + 1) % players.size
-            }
-
-            // Set the next player
-            currentPlayerIndex = nextPlayerIndex
-
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
             // Reset the tracer flag for the new player
             hasPlayerFiredTracerThisTurn = false
-            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player ${players[currentPlayerIndex].name}")
+            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player")
         }
     }
 
@@ -892,32 +861,19 @@ class ScorchedEarthGame(
 
         // Check if player is eliminated
         if (newHealth <= 0) {
-            // Count how many players are still alive
-            val alivePlayers = updatedPlayers.count { it.health > 0 }
+            // Remove the player from the list
+            updatedPlayers.removeAt(playerIndex)
 
-            // Check for round completion condition
-            if (alivePlayers <= 1) {
-                if (currentRound >= totalRoundsState) {
-                    // All rounds completed, game over
-                    gameState = GameState.GAME_OVER
-                } else {
-                    // Transition to next round
-                    transitionToNextRound()
-                }
+            // Adjust current player index if necessary
+            if (currentPlayerIndex >= updatedPlayers.size) {
+                currentPlayerIndex = 0
+            } else if (playerIndex <= currentPlayerIndex && currentPlayerIndex > 0) {
+                currentPlayerIndex--
             }
 
-            // If it's the current player's turn and they died, move to the next player
-            if (playerIndex == currentPlayerIndex) {
-                // Find the next alive player
-                var nextPlayerIndex = (currentPlayerIndex + 1) % updatedPlayers.size
-                while (nextPlayerIndex != currentPlayerIndex && updatedPlayers[nextPlayerIndex].health <= 0) {
-                    nextPlayerIndex = (nextPlayerIndex + 1) % updatedPlayers.size
-                }
-
-                // If we found an alive player, set them as the current player
-                if (nextPlayerIndex != currentPlayerIndex || updatedPlayers[nextPlayerIndex].health > 0) {
-                    currentPlayerIndex = nextPlayerIndex
-                }
+            // Check for game over condition
+            if (updatedPlayers.size <= 1) {
+                gameState = GameState.GAME_OVER
             }
         }
 
@@ -1196,81 +1152,6 @@ class ScorchedEarthGame(
     }
 
     /**
-     * Transitions to the next round with random sky and terrain.
-     * Resets player positions and game state.
-     */
-    private fun transitionToNextRound() {
-        // Increment round counter
-        currentRound++
-
-        // Generate random sky style
-        skyStyle = dev.jamiecraane.scorchedearth.sky.SkyStyleSelector.RANDOM.toSkyStyle()
-
-        // Generate random terrain variance (between 10 and 50)
-        val randomVariance = Random.nextInt(10, 51)
-        terrainVarianceState = randomVariance
-
-        // Regenerate terrain
-        terrain = generateTerrain(gameWidth, gameHeight)
-
-        // Store player names, types, and other persistent data from existing players
-        val existingPlayerData = mutableMapOf<Int, Triple<String, dev.jamiecraane.scorchedearth.model.PlayerType, Int>>()
-        val existingPlayerInventories = mutableMapOf<Int, List<Item>>()
-
-        // Save data from existing players
-        players.forEachIndexed { index, player ->
-            existingPlayerData[index] = Triple(player.name, player.type, player.money)
-
-            val inventoryItems = mutableListOf<Item>()
-            val items = player.inventory.getAllItems()
-            for (item in items) {
-                inventoryItems.add(Item(item.type, item.quantity))
-            }
-            existingPlayerInventories[index] = inventoryItems
-        }
-
-        // Regenerate all players based on the original numberOfPlayers
-        players = generatePlayers(gameWidth, gameHeight, numberOfPlayers)
-
-        // Restore player data for all players
-        players.forEachIndexed { index, player ->
-            // If we have saved data for this player index, restore it
-            existingPlayerData[index]?.let { (name, type, money) ->
-                player.name = name
-                player.type = type
-                player.money = money
-                // Make sure player health is reset to full (100)
-                player.health = 100
-
-                // Transfer items from old inventory to new inventory
-                // First clear any default items
-                val defaultItems = player.inventory.getAllItems().toList()
-                for (item in defaultItems) {
-                    player.inventory.removeItem(item.type, item.quantity)
-                }
-
-                // Then add all items from the old inventory if we have them
-                existingPlayerInventories[index]?.forEach { item ->
-                    player.inventory.addItem(item.type, item.quantity)
-                }
-            }
-        }
-
-        // Update player positions to stick to the terrain
-        updatePlayerPositions()
-
-        // Reset projectile and explosion
-        projectile = null
-        explosion = null
-        miniBombs = listOf()
-
-        // Reset game state
-        gameState = GameState.WAITING_FOR_PLAYER
-        currentPlayerIndex = 0
-        hasPlayerFiredTracerThisTurn = false
-    }
-
-    /**
      * Ends the projectile flight and switches to the next player if no mini-bombs are in flight.
      * For tracer projectiles, allows the player to fire again unless they've already fired a tracer this turn.
      */
@@ -1289,18 +1170,10 @@ class ScorchedEarthGame(
                 println("[DEBUG_LOG] Tracer fired, player can fire again")
             } else {
                 // Not a tracer or player has already fired a tracer - switch to next player
-                // Find the next alive player
-                var nextPlayerIndex = (currentPlayerIndex + 1) % players.size
-                while (nextPlayerIndex != currentPlayerIndex && players[nextPlayerIndex].health <= 0) {
-                    nextPlayerIndex = (nextPlayerIndex + 1) % players.size
-                }
-
-                // Set the next player
-                currentPlayerIndex = nextPlayerIndex
-
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.size
                 // Reset the tracer flag for the new player
                 hasPlayerFiredTracerThisTurn = false
-                println("[DEBUG_LOG] Turn ended, switching to next player ${players[currentPlayerIndex].name}")
+                println("[DEBUG_LOG] Turn ended, switching to next player")
             }
         } else {
             // Keep the game state as PROJECTILE_IN_FLIGHT while mini-bombs are active
@@ -1384,7 +1257,7 @@ class ScorchedEarthGame(
                 type = parentProjectile.type,
                 minDamage = parentProjectile.minDamage / 2,
                 maxDamage = parentProjectile.maxDamage / 2,
-                blastRadius = parentProjectile.blastRadius * 3.0f, // Tripled blast radius at highest point
+                blastRadius = parentProjectile.blastRadius * 2.0f, // Tripled blast radius at highest point
                 trail = listOf() // Start with empty trail
             )
 
@@ -1455,36 +1328,3 @@ class ScorchedEarthGame(
     }
 }
 
-/**
- * Represents the current state of the game.
- */
-enum class GameState {
-    WAITING_FOR_PLAYER,
-    AIMING,
-    PROJECTILE_IN_FLIGHT,
-    GAME_OVER
-}
-
-/**
- * Defines the different types of projectiles available in the game.
- */
-enum class ProjectileType(
-    val displayName: String,
-    val minDamage: Int,
-    val maxDamage: Int,
-    val blastRadius: Float,
-    val cost: Int,
-    val purchaseQuantity: Int = 1,
-) {
-    BABY_MISSILE("Baby Missile", 10, 30, 60f, 250, purchaseQuantity = 10),
-    SMALL_MISSILE("Small Missile", 20, 50, 90f, 1875, purchaseQuantity = 5),
-    BIG_MISSILE("Big Missile", 30, 75, 200f, 2500),
-    DEATHS_HEAD("Death's Head", 50, 100, 300f, 5000),
-    BABY_NUKE("Baby Nuke", 60, 125, 650f, 10000, purchaseQuantity = 3),
-    NUCLEAR_BOMB("Nuclear Bomb", 75, 150, 1000f, 12000),
-    FUNKY_BOMB("Funky Bomb", 25, 60, 150f, 7000, purchaseQuantity = 2),
-    MIRV("MIRV", 15, 40, 80f, 7500, purchaseQuantity = 3),
-    LEAPFROG("Leapfrog", 15, 35, 70f, 7500, purchaseQuantity = 2),
-    TRACER("Tracer", 0, 0, 0f, 500, purchaseQuantity = 10),
-    ROLLER("Roller", 40, 80, 150f, 4000, purchaseQuantity = 4)
-}

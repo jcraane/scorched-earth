@@ -1,6 +1,7 @@
 package dev.jamiecraane.scorchedearth.engine
 
 import androidx.compose.ui.geometry.Offset
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.model.Player
 import kotlin.math.atan2
 import kotlin.math.PI

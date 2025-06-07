@@ -9,3 +9,5 @@
   - player wins round: 1000 * number of players (player who was before that player 1000 * number of players - 1 etc)
 - summary window between each round
 - Smooth out terrain. Use highs and valleys but terrain itself should be smooth
+- Blast should do more damage
+- ✅mirv to high blast radius of projectiles

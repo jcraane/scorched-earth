@@ -2,7 +2,7 @@ package dev.jamiecraane.scorchedearth.model
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import dev.jamiecraane.scorchedearth.engine.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.Inventory
 
 /**

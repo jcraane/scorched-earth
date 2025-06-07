@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import dev.jamiecraane.scorchedearth.engine.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import kotlinx.coroutines.delay
 

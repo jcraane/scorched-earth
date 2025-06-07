@@ -1,7 +1,7 @@
 package dev.jamiecraane.scorchedearth.model
 
 import androidx.compose.ui.geometry.Offset
-import dev.jamiecraane.scorchedearth.engine.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 
 /**
  * Represents a projectile in flight.

@@ -1,6 +1,6 @@
 package dev.jamiecraane.scorchedearth.inventory
 
-import dev.jamiecraane.scorchedearth.engine.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 
 /**
  * Represents an item in a player's inventory.
