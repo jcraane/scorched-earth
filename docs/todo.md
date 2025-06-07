@@ -1,8 +1,8 @@
 - ✅mirv more damage when explodes into smaller bombs
 - ✅when tracer is fired, player can fire waepon after that or trace but then turn is over
 - ✅number of rounds
-- Advance to next round
-- Summary screen between each round
+- ✅Advance to next round (check if player is reset)
+- Summary screen after all rounds
 - Final summary screen between every round
 - fall damage
 - shield
@@ -10,8 +10,10 @@
   - player kills other player -> 2500
   - player deals damage: damage * 20
   - player wins round: 1000 * number of players (player who was before that player 1000 * number of players - 1 etc)
-- summary window between each round
-- Smooth out terrain. Use highs and valleys but terrain itself should be smooth
+- ✅summary window between each round
 - ✅Blast should do more damage
 - ✅mirv to high blast radius of projectiles
-- player does not fall down
+- ✅player does not fall down
+- tracer does not work anymore
+- tank graphic
+- tank should stand on bottom if no terrain is present

@@ -84,7 +84,21 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
         when (gameState) {
             GameState.PROJECTILE_IN_FLIGHT -> {
                 val turnEnded = projectileManager.updateProjectile(deltaTime)
-                if (turnEnded) {
+
+                // Check if projectile is null (impact occurred) but game state hasn't changed
+                // This handles the case where a tracer projectile impacts but turnEnded is false
+                if (projectileManager.projectile == null && projectileManager.miniBombs.isEmpty()) {
+                    // No projectiles in flight, check if round is over
+                    val alivePlayers = players.count { it.health > 0 }
+                    if (alivePlayers <= 1) {
+                        // Round is over, show statistics
+                        prepareNextRound()
+                    } else if (!turnEnded) {
+                        // If turnEnded is false, it means the player can fire again (e.g., after firing a tracer)
+                        gameState = GameState.WAITING_FOR_PLAYER
+                    }
+                } else if (turnEnded) {
+                    // Normal turn end handling
                     // Check if round is over (only one player alive)
                     val alivePlayers = players.count { it.health > 0 }
                     if (alivePlayers <= 1) {

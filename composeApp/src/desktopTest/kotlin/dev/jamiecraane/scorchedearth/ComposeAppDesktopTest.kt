@@ -180,4 +180,62 @@ class ComposeAppDesktopTest {
 
         println("[DEBUG_LOG] Test completed - dead players reappear in new rounds")
     }
+    @Test
+    fun testTracerProjectileStateTransition() {
+        // Create a game instance
+        val game = ScorchedEarthGame()
+
+        // Set fixed dimensions for consistent testing
+        game.updateDimensions(1000f, 800f)
+
+        // Set up the player with a tracer projectile
+        val players = game.players.toMutableList()
+
+        // Position the player at a location where the projectile will hit terrain
+        players[0] = players[0].copy(
+            position = androidx.compose.ui.geometry.Offset(500f, 400f),
+            angle = 45f,
+            power = 50f
+        )
+
+        // Set the selected projectile type to TRACER
+        players[0] = players[0].copy(
+            selectedProjectileType = dev.jamiecraane.scorchedearth.inventory.ProjectileType.TRACER
+        )
+
+        // Make sure the player has tracer projectiles in inventory
+        players[0].inventory.addItem(dev.jamiecraane.scorchedearth.inventory.ProjectileType.TRACER, 5)
+
+        game.players = players
+        game.currentPlayerIndex = 0
+
+        // Verify initial game state
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.WAITING_FOR_PLAYER, game.gameState)
+
+        // Fire the tracer projectile
+        val fired = game.fireProjectile(45f, 50f)
+
+        // Verify the projectile was fired successfully
+        assert(fired) { "Failed to fire tracer projectile" }
+
+        // Verify game state changed to PROJECTILE_IN_FLIGHT
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.PROJECTILE_IN_FLIGHT, game.gameState)
+
+        // Run the game loop for a few frames to allow the projectile to hit something
+        for (i in 0 until 100) {
+            game.update(0.016f) // 60 FPS
+
+            // If projectile is null, it has impacted
+            if (game.projectile == null) {
+                println("[DEBUG_LOG] Projectile impacted at frame $i")
+                break
+            }
+        }
+
+        // Verify that the game state has changed back to WAITING_FOR_PLAYER
+        // This is the key test for our fix
+        assertEquals(dev.jamiecraane.scorchedearth.engine.GameState.WAITING_FOR_PLAYER, game.gameState)
+
+        println("[DEBUG_LOG] Test completed - game state transitions correctly after tracer impact")
+    }
 }
