@@ -39,6 +39,9 @@ class ExplosionManager(
         // Deform terrain if the explosion is colliding with it
         if (terrainManager.isCollidingWithTerrain(position)) {
             terrainManager.deformTerrain(position, explosionRadius, gameWidth, gameHeight)
+
+            // Update player positions to account for terrain deformation
+            playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX)
         }
 
         // Check for players within blast radius and apply damage
