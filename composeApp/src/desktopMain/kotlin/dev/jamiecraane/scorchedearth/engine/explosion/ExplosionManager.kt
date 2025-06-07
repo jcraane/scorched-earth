@@ -41,7 +41,8 @@ class ExplosionManager(
             terrainManager.deformTerrain(position, explosionRadius, gameWidth, gameHeight)
 
             // Update player positions to account for terrain deformation
-            playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX)
+            // Use animation for falling players
+            playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX, animate = true)
         }
 
         // Check for players within blast radius and apply damage
@@ -85,7 +86,7 @@ class ExplosionManager(
      */
     private fun applyBlastDamageToPlayers(explosionPosition: Offset, blastRadius: Float, projectile: Projectile? = null): Boolean {
         // Get damage values from projectile or use defaults
-        val minDamage = projectile?.minDamage ?: 10
+        val minDamage = projectile?.damageOuterBlastRadius ?: 10
         val maxDamage = projectile?.maxDamage ?: 100
         var gameOver = false
 

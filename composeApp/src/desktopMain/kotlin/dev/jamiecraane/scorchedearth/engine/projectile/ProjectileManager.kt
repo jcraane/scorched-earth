@@ -8,7 +8,6 @@ import dev.jamiecraane.scorchedearth.engine.explosion.ExplosionManager
 import dev.jamiecraane.scorchedearth.engine.player.PlayerManager
 import dev.jamiecraane.scorchedearth.engine.terrain.TerrainManager
 import dev.jamiecraane.scorchedearth.inventory.ProjectileType
-import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.Projectile
 import kotlin.math.PI
 import kotlin.math.abs
@@ -288,7 +287,7 @@ class ProjectileManager(
                         position = newPosition,
                         velocity = newVelocity,
                         type = bomb.type,
-                        minDamage = bomb.minDamage / 2, // Reduced damage for mini-bombs
+                        damageOuterBlastRadius = bomb.damageOuterBlastRadius / 2, // Reduced damage for mini-bombs
                         maxDamage = bomb.maxDamage / 2,
                         blastRadius = bomb.blastRadius // Keep full blast radius
                     ),
@@ -309,7 +308,7 @@ class ProjectileManager(
                             position = newPosition,
                             velocity = newVelocity,
                             type = bomb.type,
-                            minDamage = bomb.minDamage / 2,
+                            damageOuterBlastRadius = bomb.damageOuterBlastRadius / 2,
                             maxDamage = bomb.maxDamage / 2,
                             blastRadius = bomb.blastRadius // Keep full blast radius
                         ),
@@ -333,7 +332,7 @@ class ProjectileManager(
                         position = newPosition,
                         velocity = newVelocity,
                         type = bomb.type,
-                        minDamage = bomb.minDamage,
+                        damageOuterBlastRadius = bomb.damageOuterBlastRadius,
                         maxDamage = bomb.maxDamage,
                         blastRadius = bomb.blastRadius,
                         trail = updatedTrail
@@ -372,7 +371,7 @@ class ProjectileManager(
             velocity = velocity,
             type = proj.type,
             blastRadius = proj.blastRadius * 0.5f, // Half the normal blast radius
-            minDamage = proj.minDamage / 2, // Reduced damage for bounce explosions
+            damageOuterBlastRadius = proj.damageOuterBlastRadius / 2, // Reduced damage for bounce explosions
             maxDamage = proj.maxDamage / 2
         )
         explosionManager.createExplosion(position, bounceExplosionProjectile, gameWidth, gameHeight)
@@ -413,7 +412,7 @@ class ProjectileManager(
                 velocity = newVelocity,
                 type = proj.type,
                 blastRadius = proj.blastRadius * 2.0f, // Double the normal blast radius
-                minDamage = proj.minDamage * 2, // Double the damage
+                damageOuterBlastRadius = proj.damageOuterBlastRadius * 2, // Double the damage
                 maxDamage = proj.maxDamage * 2
             )
             explosionManager.createExplosion(position, finalExplosionProjectile, gameWidth, gameHeight)
@@ -615,7 +614,7 @@ class ProjectileManager(
                 position = offsetPosition, // Start from offset position
                 velocity = velocity,
                 type = parentProjectile.type, // Same type as parent
-                minDamage = parentProjectile.minDamage / 3, // Reduced damage
+                damageOuterBlastRadius = parentProjectile.damageOuterBlastRadius / 3, // Reduced damage
                 maxDamage = parentProjectile.maxDamage / 3,
                 blastRadius = parentProjectile.blastRadius, // Same blast radius as parent
                 trail = listOf() // Start with empty trail
@@ -671,7 +670,7 @@ class ProjectileManager(
                 position = position.copy(), // Copy to avoid reference issues
                 velocity = velocity,
                 type = parentProjectile.type,
-                minDamage = parentProjectile.minDamage / 2,
+                damageOuterBlastRadius = parentProjectile.damageOuterBlastRadius / 2,
                 maxDamage = parentProjectile.maxDamage / 2,
                 blastRadius = parentProjectile.blastRadius * 2.0f, // Tripled blast radius at highest point
                 trail = listOf() // Start with empty trail

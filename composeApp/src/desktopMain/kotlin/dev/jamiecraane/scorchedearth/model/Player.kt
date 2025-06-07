@@ -26,5 +26,10 @@ data class Player(
     var selectedProjectileType: ProjectileType = ProjectileType.BABY_MISSILE,
     var money: Int = 10000,
     val inventory: Inventory = Inventory(),
-    var type: PlayerType = PlayerType.HUMAN
+    var type: PlayerType = PlayerType.HUMAN,
+    // Animation properties
+    var isFalling: Boolean = false,
+    var fallStartPosition: Offset? = null,
+    var fallTargetPosition: Offset? = null,
+    var fallProgress: Float = 0f
 )

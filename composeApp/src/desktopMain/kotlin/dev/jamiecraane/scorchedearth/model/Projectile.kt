@@ -8,7 +8,7 @@ import dev.jamiecraane.scorchedearth.inventory.ProjectileType
  * @param position Current position of the projectile
  * @param velocity Current velocity of the projectile
  * @param type The type of projectile
- * @param minDamage Minimum damage dealt at the outer edge of the blast radius
+ * @param damageOuterBlastRadius Minimum damage dealt at the outer edge of the blast radius
  * @param maxDamage Maximum damage dealt on direct hit
  * @param blastRadius Radius of the explosion when the projectile hits
  * @param trail List of previous positions to create a trail effect
@@ -23,7 +23,7 @@ data class Projectile(
     val position: Offset,
     val velocity: Offset,
     val type: ProjectileType,
-    val minDamage: Int = type.minDamage,
+    val damageOuterBlastRadius: Int = type.minDamage,
     val maxDamage: Int = type.maxDamage,
     val blastRadius: Float = type.blastRadius,
     val trail: List<Offset> = listOf(),

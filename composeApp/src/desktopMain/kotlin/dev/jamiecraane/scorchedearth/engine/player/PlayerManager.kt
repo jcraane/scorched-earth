@@ -76,18 +76,95 @@ class PlayerManager {
      * Updates player positions to match the terrain height at their x-coordinates.
      * This ensures players always sit on top of the terrain.
      * @param getTerrainHeightAtX Function to get the terrain height at a specific x-coordinate
+     * @param animate Whether to animate the falling (true) or update instantly (false)
      */
-    fun updatePlayerPositions(getTerrainHeightAtX: (Float) -> Float) {
+    fun updatePlayerPositions(getTerrainHeightAtX: (Float) -> Float, animate: Boolean = false) {
         val updatedPlayers = players.map { player ->
             // Find the terrain height at the player's x-coordinate
             val terrainHeight = getTerrainHeightAtX(player.position.x)
+            // Calculate the target position (on top of the terrain)
+            val targetPosition = Offset(player.position.x, terrainHeight - 15f)
 
-            // Create a new player with updated y-position
-            // Subtract a small offset to place the player visibly on top of the terrain
-            player.copy(position = Offset(player.position.x, terrainHeight - 15f))
+            // Check if the player needs to fall (current y position is above the terrain)
+            val needsToFall = player.position.y < targetPosition.y
+
+            if (needsToFall && animate) {
+                // Start falling animation
+                player.copy(
+                    isFalling = true,
+                    fallStartPosition = player.position,
+                    fallTargetPosition = targetPosition,
+                    fallProgress = 0f
+                )
+            } else {
+                // Immediately update position without animation
+                player.copy(
+                    position = targetPosition,
+                    isFalling = false,
+                    fallStartPosition = null,
+                    fallTargetPosition = null,
+                    fallProgress = 0f
+                )
+            }
         }
 
         players = updatedPlayers
+    }
+
+    /**
+     * Updates falling animation for all players.
+     * @param deltaTime Time elapsed since the last update in seconds
+     * @return True if any player is still falling, false otherwise
+     */
+    fun updateFallingPlayers(deltaTime: Float): Boolean {
+        // Animation speed (adjust as needed)
+        val fallSpeed = 2.0f
+
+        // Check if any player is falling
+        val anyPlayerFalling = players.any { it.isFalling }
+        if (!anyPlayerFalling) {
+            return false
+        }
+
+        // Update falling players
+        val updatedPlayers = players.map { player ->
+            if (player.isFalling && player.fallStartPosition != null && player.fallTargetPosition != null) {
+                // Update fall progress
+                val newProgress = (player.fallProgress + deltaTime * fallSpeed).coerceAtMost(1.0f)
+
+                // Calculate new position using linear interpolation
+                val newPosition = if (newProgress >= 1.0f) {
+                    // Animation complete
+                    player.copy(
+                        position = player.fallTargetPosition!!,
+                        isFalling = false,
+                        fallStartPosition = null,
+                        fallTargetPosition = null,
+                        fallProgress = 0f
+                    )
+                } else {
+                    // Animation in progress
+                    val startPos = player.fallStartPosition!!
+                    val targetPos = player.fallTargetPosition!!
+                    val x = startPos.x
+                    val y = startPos.y + (targetPos.y - startPos.y) * newProgress
+
+                    player.copy(
+                        position = Offset(x, y),
+                        fallProgress = newProgress
+                    )
+                }
+
+                newPosition
+            } else {
+                player
+            }
+        }
+
+        players = updatedPlayers
+
+        // Return true if any player is still falling
+        return players.any { it.isFalling }
     }
 
     /**

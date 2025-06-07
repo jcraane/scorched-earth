@@ -66,7 +66,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
         }
 
         // Update player positions to stick to the terrain
-        playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX)
+        // Don't animate when resizing - instant repositioning
+        playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX, animate = false)
 
         // Reset projectile and explosion if they exist to prevent out-of-bounds issues
         projectileManager.reset()
@@ -113,6 +114,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Update explosion if it exists
         explosionManager.updateExplosion(deltaTime)
+
+        // Update falling players animation
+        playerManager.updateFallingPlayers(deltaTime)
     }
 
     /**
@@ -121,7 +125,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      */
     fun setTerrainVariance(variance: Int) {
         terrainManager.setTerrainVariance(variance, gameWidth, gameHeight)
-        playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX)
+        // Don't animate when changing terrain variance - instant repositioning
+        playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX, animate = false)
     }
 
     /**
@@ -173,7 +178,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             }
 
             // Update player positions to stick to the terrain
-            playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX)
+            // Don't animate when transitioning to a new round - instant repositioning
+            playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX, animate = false)
 
             // Reset projectiles and explosions
             projectileManager.reset()
