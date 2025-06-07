@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.inventory.InventoryButton
@@ -140,11 +141,33 @@ fun GameUI(
             drawGame(game)
         }
 
-        Button(
-            onClick = { showConfirmationDialog = true },
-            modifier = Modifier.padding(4.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Back")
+            Button(
+                onClick = { showConfirmationDialog = true },
+                modifier = Modifier.padding(4.dp)
+            ) {
+                Text("Back")
+            }
+
+            Text(
+                "Round: ${game.currentRound}",
+                modifier = Modifier.padding(4.dp),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            )
+
+//            for debug purposes
+            Button(
+                onClick = { game.transitionToNextRound() },
+                modifier = Modifier.padding(4.dp)
+            ) {
+                Text("Trigger next round")
+            }
         }
 
         // Back button confirmation dialog

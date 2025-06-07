@@ -66,7 +66,7 @@ fun App() {
         Screen.GAME -> {
             // Game is started, create the game instance
             val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle, terrainVariance, numberOfRounds) {
-                ScorchedEarthGame(numberOfPlayers).apply {
+                ScorchedEarthGame(numberOfPlayers, numberOfRounds).apply {
                     // Set player names and types
                     players.forEachIndexed { index, player ->
                         if (index < playerSetups.size) {
