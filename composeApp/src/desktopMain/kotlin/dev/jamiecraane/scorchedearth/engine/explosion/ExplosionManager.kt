@@ -97,9 +97,9 @@ class ExplosionManager(
             // Only apply damage if player is within blast radius
             if (distance <= blastRadius) {
                 // Calculate damage based on distance (closer = more damage)
-                // Using a linear falloff between maxDamage (direct hit) and minDamage (edge of blast)
+                // Using a quadratic falloff for less severe damage reduction
                 val distanceRatio = distance / blastRadius
-                val damageFactor = 1.0f - distanceRatio
+                val damageFactor = (1.0f - distanceRatio) * (1.0f - distanceRatio) // Quadratic falloff
 
                 // Calculate damage: at center (distanceRatio=0) = maxDamage, at edge (distanceRatio=1) = minDamage
                 val damage = (minDamage + (maxDamage - minDamage) * damageFactor).toInt()
