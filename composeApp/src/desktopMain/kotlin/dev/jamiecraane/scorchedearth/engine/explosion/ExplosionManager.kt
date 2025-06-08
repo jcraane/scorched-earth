@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import dev.jamiecraane.scorchedearth.engine.player.PlayerManager
 import dev.jamiecraane.scorchedearth.engine.terrain.TerrainManager
+import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.model.Explosion
 import dev.jamiecraane.scorchedearth.model.Projectile
 import kotlin.math.sqrt
@@ -20,6 +21,15 @@ class ExplosionManager(
     // Explosion state
     var explosion by mutableStateOf<Explosion?>(null)
 
+    // For Death's Head two-stage explosion
+    private var isDeathsHeadFirstStage = false
+    private var deathsHeadProjectile: Projectile? = null
+    private var deathsHeadPosition: Offset? = null
+    private var deathsHeadGameWidth: Float = 0f
+    private var deathsHeadGameHeight: Float = 0f
+    private var deathsHeadDelayTimer: Float = 0f
+    private var isWaitingForSecondExplosion: Boolean = false
+
     /**
      * Creates an explosion at the specified position.
      * @param position The position of the explosion
@@ -28,7 +38,24 @@ class ExplosionManager(
      * @param gameHeight Height of the game area
      */
     fun createExplosion(position: Offset, proj: Projectile? = null, gameWidth: Float, gameHeight: Float) {
-        val explosionRadius = proj?.blastRadius ?: 90f
+        // Determine explosion radius based on projectile type
+        val explosionRadius = if (proj?.type == ProjectileType.DEATHS_HEAD && !isDeathsHeadFirstStage) {
+            // Special handling for Death's Head projectile - first stage
+            // Store information for the second stage
+            isDeathsHeadFirstStage = true
+            deathsHeadProjectile = proj
+            deathsHeadPosition = position
+            deathsHeadGameWidth = gameWidth
+            deathsHeadGameHeight = gameHeight
+
+            // Use half the blast radius for first explosion
+            proj.blastRadius / 2
+        } else {
+            // Normal explosion for other projectiles
+            proj?.blastRadius ?: 90f
+        }
+
+        // Create the explosion
         explosion = Explosion(
             position = position,
             initialRadius = 10f, // Start with a small radius
@@ -54,11 +81,53 @@ class ExplosionManager(
      * @param deltaTime Time elapsed since the last update in seconds
      */
     fun updateExplosion(deltaTime: Float) {
+        // Handle the delay between Death's Head explosions
+        if (isWaitingForSecondExplosion) {
+            deathsHeadDelayTimer -= deltaTime
+            if (deathsHeadDelayTimer <= 0) {
+                isWaitingForSecondExplosion = false
+
+                // Create the second explosion with full blast radius
+                val position = deathsHeadPosition!!
+                val proj = deathsHeadProjectile!!
+
+                // Create a new explosion at the same position with full blast radius
+                explosion = Explosion(
+                    position = position,
+                    initialRadius = 10f, // Start small again for better visual effect
+                    maxRadius = proj.blastRadius,
+                    timeRemaining = 0.5f // Half a second duration
+                )
+
+                // Apply terrain deformation and damage for the second explosion
+                if (terrainManager.isCollidingWithTerrain(position)) {
+                    terrainManager.deformTerrain(position, proj.blastRadius, deathsHeadGameWidth, deathsHeadGameHeight)
+                    playerManager.updatePlayerPositions(terrainManager::getTerrainHeightAtX, animate = true)
+                }
+
+                // Apply damage for the second explosion
+                applyBlastDamageToPlayers(position, proj.blastRadius, proj)
+
+                // Clear stored Death's Head data
+                deathsHeadProjectile = null
+                deathsHeadPosition = null
+            }
+            return
+        }
+
         explosion?.let { exp ->
             val newTimeRemaining = exp.timeRemaining - deltaTime
             if (newTimeRemaining <= 0) {
                 // Explosion is finished
                 explosion = null
+
+                // Check if this was the first stage of a Death's Head explosion
+                if (isDeathsHeadFirstStage && deathsHeadProjectile != null && deathsHeadPosition != null) {
+                    // Set up for the second explosion after a delay
+                    isDeathsHeadFirstStage = false
+                    isWaitingForSecondExplosion = true
+                    deathsHeadDelayTimer = 0.3f // 0.3 seconds delay between explosions
+                }
             } else {
                 // Calculate the progress of the animation (0.0 to 1.0)
                 val initialTime = 0.5f // Same as in createExplosion
