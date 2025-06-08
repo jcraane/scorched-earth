@@ -19,6 +19,16 @@ enum class SkyStyle(val displayName: String) {
                 1f to Color(0xFFFF7F50)  // Coral/orange at the horizon
             )
         }
+
+        override fun createSun(width: Float, height: Float): Sun? {
+            // Position the sun near the horizon, slightly to the right
+            return Sun(
+                x = width * 0.7f,
+                y = height * 0.75f,
+                radius = width * 0.1f, // Large sun, 10% of screen width
+                color = Color(0xFFFF8C00) // Dark orange color
+            )
+        }
     },
 
     AFTERNOON("Afternoon") {
@@ -30,6 +40,11 @@ enum class SkyStyle(val displayName: String) {
                 0.7f to Color(0xFF87CEEB), // Light sky blue
                 1f to Color(0xFFADD8E6)  // Very light blue at the horizon
             )
+        }
+
+        override fun createSun(width: Float, height: Float): Sun? {
+            // No sun in afternoon sky
+            return null
         }
     },
 
@@ -44,6 +59,16 @@ enum class SkyStyle(val displayName: String) {
                 1f to Color(0xFFFF9966)  // Light orange at the horizon
             )
         }
+
+        override fun createSun(width: Float, height: Float): Sun? {
+            // Position the sun near the horizon, slightly to the left
+            return Sun(
+                x = width * 0.3f,
+                y = height * 0.8f,
+                radius = width * 0.12f, // Large sun, 12% of screen width
+                color = Color(0xFFFF4500) // Orange-red color
+            )
+        }
     },
 
     NIGHT("Night") {
@@ -56,6 +81,11 @@ enum class SkyStyle(val displayName: String) {
                 1f to Color(0xFF000088)  // Slightly lighter dark blue at the horizon
             )
         }
+
+        override fun createSun(width: Float, height: Float): Sun? {
+            // No sun in night sky
+            return null
+        }
     };
 
     /**
@@ -63,6 +93,14 @@ enum class SkyStyle(val displayName: String) {
      * @return A vertical gradient brush with colors appropriate for this sky style.
      */
     abstract fun createGradientBrush(): Brush
+
+    /**
+     * Creates a sun for this sky style if applicable.
+     * @param width Width of the canvas
+     * @param height Height of the canvas
+     * @return A Sun object or null if this sky style doesn't have a sun
+     */
+    abstract fun createSun(width: Float, height: Float): Sun?
 
     companion object {
         /**
@@ -159,4 +197,18 @@ data class Star(
     val flickerSpeed: Float = 0.05f,
     val flickerRange: Float = 0.3f,
     var flickerDirection: Int = 1
+)
+
+/**
+ * Represents a sun in the sky.
+ * @property x X-coordinate of the sun's center
+ * @property y Y-coordinate of the sun's center
+ * @property radius Radius of the sun
+ * @property color Color of the sun
+ */
+data class Sun(
+    val x: Float,
+    val y: Float,
+    val radius: Float,
+    val color: Color
 )

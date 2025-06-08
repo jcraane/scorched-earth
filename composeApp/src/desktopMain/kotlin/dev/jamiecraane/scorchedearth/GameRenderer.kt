@@ -37,6 +37,16 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
             size = size
         )
 
+        // Draw sun if the sky style has one (sunrise or sunset)
+        game.skyStyle.createSun(size.width, size.height)?.let { sun ->
+            // Draw the sun as a filled circle
+            drawCircle(
+                color = sun.color,
+                radius = sun.radius,
+                center = Offset(sun.x, sun.y)
+            )
+        }
+
         // Draw stars if night sky is selected
         if (game.skyStyle == SkyStyle.NIGHT) {
             // Generate stars if they don't exist or if it's been a while since they were last generated
@@ -70,7 +80,7 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
         )
         drawPath(
             path = game.terrain,
-            color = Color(0xFF8B4513).copy(alpha = 0.5f) // Semi-transparent fill
+            color = Color(0xFF8B4513).copy(alpha = 1.0f) // Fully opaque fill
         )
 
         // Draw players (tanks) - only render players that are alive (health > 0)

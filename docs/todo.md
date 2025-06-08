@@ -19,5 +19,6 @@
 - sounds
 - ✅When player is dead, remove from game
 - ✅Funky bomb is broken
+- ✅Draw sun in sunset and sunrise skystyles
 
 - Teams
