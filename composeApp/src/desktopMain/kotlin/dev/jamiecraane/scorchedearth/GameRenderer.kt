@@ -202,6 +202,27 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
                 topLeft = Offset(player.position.x - maxHealthBarWidth / 2, player.position.y - 36f),
                 size = Size(healthBarWidth, healthBarHeight)
             )
+
+            // Draw shield health bar if player has an active shield
+            player.activeShield?.let { shield ->
+                // Calculate shield health bar width based on shield health percentage
+                val shieldHealthPercentage = shield.getHealthPercentage()
+                val shieldHealthBarWidth = maxHealthBarWidth * shieldHealthPercentage
+
+                // Draw shield health background (darker blue)
+                drawRect(
+                    color = Color.Blue.copy(alpha = 0.5f),
+                    topLeft = Offset(player.position.x - maxHealthBarWidth / 2, player.position.y + 22f), // Position below the player
+                    size = Size(maxHealthBarWidth, healthBarHeight)
+                )
+
+                // Draw shield health foreground (brighter blue)
+                drawRect(
+                    color = shield.type.color,
+                    topLeft = Offset(player.position.x - maxHealthBarWidth / 2, player.position.y + 22f), // Position below the player
+                    size = Size(shieldHealthBarWidth, healthBarHeight)
+                )
+            }
         }
 
         // Draw projectile if in flight
