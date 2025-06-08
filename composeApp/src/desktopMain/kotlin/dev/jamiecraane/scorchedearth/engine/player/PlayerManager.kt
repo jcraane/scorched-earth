@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.jamiecraane.scorchedearth.inventory.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ShieldType
 import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.PlayerType
 import kotlin.math.sqrt
@@ -70,6 +71,8 @@ class PlayerManager {
                     inventory.addItem(ProjectileType.LEAPFROG, 3)
                     inventory.addItem(ProjectileType.TRACER, 10)
                     inventory.addItem(ProjectileType.ROLLER, 2)
+                    inventory.addItem(ShieldType.BASIC_SHIELD, 1)
+                    selectedShieldType = ShieldType.BASIC_SHIELD
                 }
             )
         }
@@ -221,14 +224,36 @@ class PlayerManager {
         val player = updatedPlayers[playerIndex]
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Applying damage to ${player.name}, current health=${player.health}")
 
-        // Apply damage
-        val newHealth = (player.health - damage).coerceAtLeast(0)
+        // Check if player has an active shield
+        var remainingDamage = damage
+        val updatedPlayer = player.copy()
+
+        if (player.hasActiveShield()) {
+            println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Player ${player.name} has an active shield with health ${player.activeShield!!.currentHealth}")
+
+            // Apply damage to shield first
+            remainingDamage = player.activeShield!!.applyDamage(damage)
+
+            println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Shield absorbed ${damage - remainingDamage} damage, remaining damage: $remainingDamage")
+
+            // If shield is depleted, remove it
+            if (player.activeShield!!.isDepleted()) {
+                println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Shield depleted, removing it")
+                updatedPlayer.activeShield = null
+            } else {
+                // Copy the shield to the updated player
+                updatedPlayer.activeShield = player.activeShield
+            }
+        }
+
+        // Apply remaining damage to player health
+        val newHealth = (player.health - remainingDamage).coerceAtLeast(0)
+        updatedPlayer.health = newHealth
+
+        println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Applied $remainingDamage damage to player health")
 
         // Check if player was just eliminated
         val wasJustEliminated = player.health > 0 && newHealth == 0
-
-        // Update player with new health
-        val updatedPlayer = player.copy(health = newHealth)
 
         // If player was just eliminated, set elimination order
         if (wasJustEliminated) {
@@ -321,6 +346,35 @@ class PlayerManager {
 
         // Add the missile to the player's inventory
         updatedPlayer.inventory.addItem(projectileType, projectileType.purchaseQuantity)
+
+        // Update the players list
+        val updatedPlayers = players.toMutableList()
+        updatedPlayers[currentPlayerIndex] = updatedPlayer
+        players = updatedPlayers
+
+        return true
+    }
+
+    /**
+     * Attempts to purchase a shield for the current player.
+     * @param shieldType The type of shield to purchase
+     * @return True if the purchase was successful, false if the player doesn't have enough money
+     */
+    fun purchaseShield(shieldType: ShieldType): Boolean {
+        val player = players[currentPlayerIndex]
+
+        // Check if player has enough money
+        if (player.money < shieldType.cost) {
+            return false
+        }
+
+        // Create a new player with updated money
+        val updatedPlayer = player.copy(
+            money = player.money - shieldType.cost
+        )
+
+        // Add the shield to the player's inventory
+        updatedPlayer.inventory.addItem(shieldType, shieldType.purchaseQuantity)
 
         // Update the players list
         val updatedPlayers = players.toMutableList()

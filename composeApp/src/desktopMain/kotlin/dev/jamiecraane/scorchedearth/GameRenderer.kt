@@ -160,6 +160,27 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
                 )
             }
 
+            // Draw shield if active
+            if (player.hasActiveShield()) {
+                val shieldRadius = 40f // Larger than the tank
+                val shieldHealthPercentage = player.activeShield!!.getHealthPercentage()
+
+                // Draw outer ring (non-transparent)
+                drawCircle(
+                    color = Color.Blue,
+                    radius = shieldRadius,
+                    center = Offset(tankX, tankY),
+                    style = Stroke(width = 3f)
+                )
+
+                // Draw inner shield (transparent based on health)
+                drawCircle(
+                    color = Color.Blue.copy(alpha = shieldHealthPercentage * 0.5f), // More transparent as health decreases
+                    radius = shieldRadius - 3f,
+                    center = Offset(tankX, tankY)
+                )
+            }
+
             // Draw player health
             // Calculate health bar width based on health percentage
             val maxHealthBarWidth = 80f

@@ -32,6 +32,10 @@ fun PlayerControls(
 
         Spacer(modifier = Modifier.Companion.height(8.dp))
 
+        ShieldSelector(game)
+
+        Spacer(modifier = Modifier.Companion.height(8.dp))
+
         FireButton(game)
     }
 

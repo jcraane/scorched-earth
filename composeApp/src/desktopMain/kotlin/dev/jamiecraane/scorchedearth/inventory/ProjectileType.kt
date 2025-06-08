@@ -4,13 +4,13 @@ package dev.jamiecraane.scorchedearth.inventory
  * Defines the different types of projectiles available in the game.
  */
 enum class ProjectileType(
-    val displayName: String,
+    override val displayName: String,
     val minDamage: Int,
     val maxDamage: Int,
     val blastRadius: Float,
-    val cost: Int,
-    val purchaseQuantity: Int = 1,
-) {
+    override val cost: Int,
+    override val purchaseQuantity: Int = 1,
+) : ItemType {
     BABY_MISSILE("Baby Missile", 10, 30, 60f, 250, purchaseQuantity = 10),
     SMALL_MISSILE("Small Missile", 20, 40, 90f, 1875, purchaseQuantity = 5),
     BIG_MISSILE("Big Missile", 30, 60, 200f, 2500),

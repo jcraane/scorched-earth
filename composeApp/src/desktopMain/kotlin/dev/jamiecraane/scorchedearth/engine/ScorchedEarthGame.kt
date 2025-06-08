@@ -8,6 +8,7 @@ import dev.jamiecraane.scorchedearth.engine.player.PlayerManager
 import dev.jamiecraane.scorchedearth.engine.projectile.ProjectileManager
 import dev.jamiecraane.scorchedearth.engine.terrain.TerrainManager
 import dev.jamiecraane.scorchedearth.inventory.ProjectileType
+import dev.jamiecraane.scorchedearth.inventory.ShieldType
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
 
 /**
@@ -168,6 +169,41 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      */
     fun purchaseMissile(projectileType: ProjectileType): Boolean {
         return playerManager.purchaseMissile(projectileType)
+    }
+
+    /**
+     * Attempts to purchase a shield for the current player.
+     * @param shieldType The type of shield to purchase
+     * @return True if the purchase was successful, false if the player doesn't have enough money
+     */
+    fun purchaseShield(shieldType: ShieldType): Boolean {
+        return playerManager.purchaseShield(shieldType)
+    }
+
+    /**
+     * Selects a shield type for the current player.
+     * @param shieldType The type of shield to select
+     */
+    fun selectShield(shieldType: ShieldType) {
+        val currentPlayer = playerManager.getCurrentPlayer()
+        currentPlayer.selectedShieldType = shieldType
+    }
+
+    /**
+     * Activates the selected shield for the current player.
+     * @return True if the shield was activated, false otherwise
+     */
+    fun activateShield(): Boolean {
+        val currentPlayer = playerManager.getCurrentPlayer()
+        return currentPlayer.activateShield()
+    }
+
+    /**
+     * Deactivates the current player's shield.
+     */
+    fun deactivateShield() {
+        val currentPlayer = playerManager.getCurrentPlayer()
+        currentPlayer.deactivateShield()
     }
 
     /**
