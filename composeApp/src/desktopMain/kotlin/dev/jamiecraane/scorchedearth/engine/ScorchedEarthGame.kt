@@ -182,12 +182,22 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
     /**
      * Toggles the selection of a shield type for the current player.
+     * Also automatically activates the shield when selected and deactivates when deselected.
      * @param shieldType The type of shield to toggle
      * @return True if the shield is now selected, false if it was deselected
      */
     fun selectShield(shieldType: ShieldType): Boolean {
         val currentPlayer = playerManager.getCurrentPlayer()
-        return currentPlayer.toggleShieldSelection(shieldType)
+        val isSelected = currentPlayer.toggleShieldSelection(shieldType)
+
+        // Automatically activate shield when selected, deactivate when deselected
+        if (isSelected) {
+            currentPlayer.activateShield()
+        } else {
+            currentPlayer.deactivateShield()
+        }
+
+        return isSelected
     }
 
     /**

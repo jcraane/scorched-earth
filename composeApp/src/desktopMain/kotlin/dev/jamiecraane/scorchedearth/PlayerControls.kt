@@ -33,11 +33,6 @@ fun PlayerControls(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Button to activate the selected shield
-        ShieldActivationButton(game)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         FireButton(game)
     }
 
