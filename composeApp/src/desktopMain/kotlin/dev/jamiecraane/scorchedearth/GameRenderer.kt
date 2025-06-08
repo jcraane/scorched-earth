@@ -164,10 +164,11 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
             if (player.hasActiveShield()) {
                 val shieldRadius = 40f // Larger than the tank
                 val shieldHealthPercentage = player.activeShield!!.getHealthPercentage()
+                val shieldColor = player.activeShield!!.type.color
 
                 // Draw outer ring (non-transparent)
                 drawCircle(
-                    color = Color.Blue,
+                    color = shieldColor,
                     radius = shieldRadius,
                     center = Offset(tankX, tankY),
                     style = Stroke(width = 3f)
@@ -175,7 +176,7 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
 
                 // Draw inner shield (transparent based on health)
                 drawCircle(
-                    color = Color.Blue.copy(alpha = shieldHealthPercentage * 0.5f), // More transparent as health decreases
+                    color = shieldColor.copy(alpha = shieldHealthPercentage * 0.5f), // More transparent as health decreases
                     radius = shieldRadius - 3f,
                     center = Offset(tankX, tankY)
                 )
