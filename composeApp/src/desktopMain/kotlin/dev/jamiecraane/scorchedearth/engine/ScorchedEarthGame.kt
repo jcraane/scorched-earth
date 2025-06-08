@@ -9,6 +9,7 @@ import dev.jamiecraane.scorchedearth.engine.projectile.ProjectileManager
 import dev.jamiecraane.scorchedearth.engine.terrain.TerrainManager
 import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.ShieldType
+import dev.jamiecraane.scorchedearth.shield.Shield
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
 
 /**
@@ -188,13 +189,25 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      */
     fun selectShield(shieldType: ShieldType): Boolean {
         val currentPlayer = playerManager.getCurrentPlayer()
+
+        // First check if this shield is already selected
+        val wasSelected = currentPlayer.isShieldSelected(shieldType)
+
+        // If it was selected, deactivate it first
+        if (wasSelected) {
+            currentPlayer.deactivateShield()
+        }
+
+        // Now toggle the selection state
         val isSelected = currentPlayer.toggleShieldSelection(shieldType)
 
-        // Automatically activate shield when selected, deactivate when deselected
+        // Activate shield if it's now selected
         if (isSelected) {
-            currentPlayer.activateShield()
-        } else {
-            currentPlayer.deactivateShield()
+            // Check if player has this shield type in inventory
+            if (currentPlayer.inventory.hasItem(shieldType)) {
+                // Don't remove from inventory, just activate
+                currentPlayer.activeShield = Shield(shieldType)
+            }
         }
 
         return isSelected
