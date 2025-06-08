@@ -1,5 +1,9 @@
 package dev.jamiecraane.scorchedearth.inventory
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 /**
  * Represents a generic item in a player's inventory.
  * @param type The type of item this represents
@@ -15,7 +19,7 @@ data class GenericItem(
  */
 class GenericInventory {
     private val items = mutableMapOf<ItemType, GenericItem>()
-    private var selectedShield: ItemType? = null
+    private var selectedShieldState by mutableStateOf<ItemType?>(null)
 
     /**
      * Adds the specified quantity of an item to the inventory.
@@ -86,13 +90,13 @@ class GenericInventory {
      * @return True if the shield is now selected, false if it was deselected
      */
     fun toggleShieldSelection(type: ItemType): Boolean {
-        if (selectedShield == type) {
+        if (selectedShieldState == type) {
             // Deselect the shield
-            selectedShield = null
+            selectedShieldState = null
             return false
         } else {
             // Select the shield
-            selectedShield = type
+            selectedShieldState = type
             return true
         }
     }
@@ -102,7 +106,7 @@ class GenericInventory {
      * @return The selected shield type, or null if no shield is selected
      */
     fun getSelectedShield(): ItemType? {
-        return selectedShield
+        return selectedShieldState
     }
 
     /**
@@ -111,6 +115,6 @@ class GenericInventory {
      * @return True if the specified shield is selected
      */
     fun isShieldSelected(type: ItemType): Boolean {
-        return selectedShield == type
+        return selectedShieldState == type
     }
 }

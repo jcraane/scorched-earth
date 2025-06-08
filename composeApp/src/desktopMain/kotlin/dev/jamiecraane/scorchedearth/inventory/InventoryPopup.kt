@@ -1,5 +1,6 @@
 package dev.jamiecraane.scorchedearth.inventory
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,11 +61,26 @@ fun InventoryPopup(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "Inventory",
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Inventory",
+                        color = Color.White
+                    )
+
+                    // Close button
+                    Text(
+                        text = "✕",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .clickable { onDismiss() }
+                    )
+                }
 
                 // Display player's money
                 Text(
@@ -137,7 +153,6 @@ fun InventoryPopup(
                                                 selectedProjectileType = projectileType
                                             )
                                             game.players = players
-                                            onDismiss()
                                         }
                                     },
                                     onBuy = {
@@ -175,17 +190,7 @@ fun InventoryPopup(
                                         // Toggle shield selection if player has this shield type
                                         if (quantity > 0) {
                                             // Toggle shield selection
-                                            currentPlayer.inventory.toggleShieldSelection(shieldType)
-
-                                            // If shield is now selected, activate it
-                                            if (currentPlayer.inventory.isShieldSelected(shieldType)) {
-                                                game.selectShield(shieldType)
-                                            } else {
-                                                // If shield is now deselected, deactivate it
-                                                game.deactivateShield()
-                                            }
-
-                                            onDismiss()
+                                            game.selectShield(shieldType)
                                         }
                                     },
                                     onBuy = {
