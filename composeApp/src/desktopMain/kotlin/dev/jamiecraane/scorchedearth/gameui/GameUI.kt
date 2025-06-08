@@ -1,4 +1,4 @@
-package dev.jamiecraane.scorchedearth
+package dev.jamiecraane.scorchedearth.gameui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -12,8 +12,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import dev.jamiecraane.scorchedearth.ConfirmationDialog
+import dev.jamiecraane.scorchedearth.GameStatistics
+import dev.jamiecraane.scorchedearth.RoundStatistics
+import dev.jamiecraane.scorchedearth.drawGame
+import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
+import dev.jamiecraane.scorchedearth.model.PlayerType
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import kotlinx.coroutines.delay
 
@@ -30,8 +37,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameUI(
     game: ScorchedEarthGame,
-    initialCanvasSize: androidx.compose.ui.geometry.Size,
-    cpuController: dev.jamiecraane.scorchedearth.engine.CPUPlayerController? = null,
+    initialCanvasSize: Size,
+    cpuController: CPUPlayerController? = null,
     onBackToIntro: () -> Unit = {},
 ) {
     // Track canvas size to detect changes
@@ -64,7 +71,7 @@ fun GameUI(
                 val currentPlayer = game.players[game.currentPlayerIndex]
 
                 // Check if current player is CPU and we have a CPU controller
-                if (currentPlayer.type == dev.jamiecraane.scorchedearth.model.PlayerType.CPU && cpuController != null) {
+                if (currentPlayer.type == PlayerType.CPU && cpuController != null) {
                     println(
                         "[DEBUG_LOG] CPU player turn: ${currentPlayer.name}, Inventory: ${
                             currentPlayer.inventory.getAllItems()

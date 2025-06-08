@@ -8,7 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
 import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
-import dev.jamiecraane.scorchedearth.model.PlayerType
+import dev.jamiecraane.scorchedearth.gameui.GameUI
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

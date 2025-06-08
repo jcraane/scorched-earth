@@ -1,4 +1,4 @@
-package dev.jamiecraane.scorchedearth
+package dev.jamiecraane.scorchedearth.gameui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
