@@ -3,22 +3,23 @@
 - ✅number of rounds
 - ✅Advance to next round (check if player is reset)
 - ✅Final summary screen between all rounds
-- fall damage
-- shield
-- money earn scheme
-  - player kills other player -> 2500
-  - player deals damage: damage * 20
-  - When round ends: 
 - ✅summary window between each round
 - ✅Blast should do more damage
 - ✅mirv to high blast radius of projectiles
 - ✅player does not fall down
 - ✅tracer does not work anymore
 - ✅tank graphic
-- tank should stand on bottom if no terrain is present
-- sounds
 - ✅When player is dead, remove from game
 - ✅Funky bomb is broken
 - ✅Draw sun in sunset and sunrise skystyles
+- ✅fall damage
+
+- shield
+- money earn scheme
+  - player kills other player -> 2500
+  - player deals damage: damage * 20
+  - When round ends: 
+- tank should stand on bottom if no terrain is present
+- sounds
 
 - Teams

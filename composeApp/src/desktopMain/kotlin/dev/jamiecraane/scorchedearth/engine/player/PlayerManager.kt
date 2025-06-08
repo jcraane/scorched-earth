@@ -20,6 +20,9 @@ class PlayerManager {
     // Current player index
     var currentPlayerIndex by mutableStateOf(0)
 
+    // Game dimensions for calculating fall damage
+    private var gameHeight: Float = 1200f
+
     /**
      * Generates players with positions scaled to the current game dimensions.
      * @param width Width of the game area
@@ -28,6 +31,9 @@ class PlayerManager {
      * @return List of players
      */
     fun generatePlayers(width: Float, height: Float, numberOfPlayers: Int = 2): List<Player> {
+        // Store game height for fall damage calculations
+        this.gameHeight = height
+
         val baseY = height * 0.7f - 20f
         val players = mutableListOf<Player>()
 
@@ -135,13 +141,37 @@ class PlayerManager {
                 // Calculate new position using linear interpolation
                 val newPosition = if (newProgress >= 1.0f) {
                     // Animation complete
-                    player.copy(
+
+                    // Calculate fall damage when animation completes
+                    val fallHeight = player.fallTargetPosition!!.y - player.fallStartPosition!!.y
+
+                    // Create updated player with fall animation complete
+                    var updatedPlayer = player.copy(
                         position = player.fallTargetPosition!!,
                         isFalling = false,
                         fallStartPosition = null,
                         fallTargetPosition = null,
                         fallProgress = 0f
                     )
+
+                    // Apply fall damage if applicable
+                    if (fallHeight > 0) {
+                        // Calculate fall damage - max 30 damage for full level height
+                        // Damage decreases linearly with height
+                        val damageRatio = fallHeight / gameHeight
+                        val fallDamage = (30 * damageRatio).toInt()
+
+                        if (fallDamage > 0) {
+                            println("[DEBUG_LOG] Player ${player.name} took $fallDamage fall damage from height $fallHeight")
+                            // Apply damage directly to the updated player
+                            updatedPlayer = updatedPlayer.copy(
+                                health = (updatedPlayer.health - fallDamage).coerceAtLeast(0)
+                            )
+                            println("[DEBUG_LOG] Player ${updatedPlayer.name} health after fall damage: ${updatedPlayer.health}")
+                        }
+                    }
+
+                    updatedPlayer
                 } else {
                     // Animation in progress
                     val startPos = player.fallStartPosition!!

@@ -295,4 +295,43 @@ class ComposeAppDesktopTest {
 
         println("[DEBUG_LOG] Test completed - game transitions to GAME_OVER state after all rounds are played")
     }
+
+    @Test
+    fun testFallDamage() {
+        // Create a PlayerManager instance directly
+        val playerManager = dev.jamiecraane.scorchedearth.engine.player.PlayerManager()
+
+        // Set game height for fall damage calculation
+        playerManager.generatePlayers(1000f, 800f, 1)
+
+        // Create a player in a falling state
+        val player = dev.jamiecraane.scorchedearth.model.Player(
+            position = androidx.compose.ui.geometry.Offset(200f, 200f),
+            color = androidx.compose.ui.graphics.Color.Red,
+            name = "Test Player",
+            health = 100,
+            isFalling = true,
+            fallStartPosition = androidx.compose.ui.geometry.Offset(200f, 200f),
+            fallTargetPosition = androidx.compose.ui.geometry.Offset(200f, 600f), // 400 unit fall
+            fallProgress = 0.9f // Almost at the end of the fall
+        )
+
+        // Set the player in the PlayerManager
+        playerManager.players = listOf(player)
+
+        println("[DEBUG_LOG] Test player before fall: ${playerManager.players[0].name}(${playerManager.players[0].health})")
+
+        // Update falling players to complete the fall and apply damage
+        playerManager.updateFallingPlayers(0.2f) // This should complete the fall
+
+        println("[DEBUG_LOG] Test player after fall: ${playerManager.players[0].name}(${playerManager.players[0].health})")
+
+        // Verify that fall damage was applied
+        // For a 400 unit fall in an 800 unit high game, we expect 400/800 * 30 = 15 damage
+        // So health should be 100 - 15 = 85
+        val expectedHealth = 100 - (400f / 800f * 30).toInt()
+        assertEquals(expectedHealth, playerManager.players[0].health)
+
+        println("[DEBUG_LOG] Test completed - fall damage is applied correctly")
+    }
 }
