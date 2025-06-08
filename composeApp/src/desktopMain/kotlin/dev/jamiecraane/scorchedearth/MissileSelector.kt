@@ -18,33 +18,33 @@ import dev.jamiecraane.scorchedearth.inventory.InventoryButton
 import dev.jamiecraane.scorchedearth.inventory.InventoryPopup
 
 /**
- * Control for selecting a missile type from the inventory.
+ * Control for selecting items from the inventory.
  */
 @Composable
-fun MissileSelector(game: ScorchedEarthGame) {
+fun InventorySelector(game: ScorchedEarthGame) {
     var showInventoryPopup by remember { mutableStateOf(false) }
     val currentPlayer = game.players[game.currentPlayerIndex]
     val currentMissile = currentPlayer.selectedProjectileType
     val currentMissileQuantity = currentPlayer.inventory.getItemQuantity(currentMissile)
 
     Row(
-        modifier = Modifier.Companion.fillMaxWidth(),
-        verticalAlignment = Alignment.Companion.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             "Inventory: ",
-            modifier = Modifier.Companion.width(100.dp),
-            color = Color.Companion.White
+            modifier = Modifier.width(100.dp),
+            color = Color.White
         )
 
-        // Button to show current missile and open popup
+        // Button to show current item and open popup
         InventoryButton(
-            currentMissile = currentMissile,
-            currentMissileQuantity = currentMissileQuantity,
+            currentItem = currentMissile,
+            currentItemQuantity = currentMissileQuantity,
             onClick = { showInventoryPopup = true }
         )
 
-        // Missile selection popup
+        // Inventory selection popup
         if (showInventoryPopup) {
             InventoryPopup(
                 game = game,

@@ -2,6 +2,8 @@ package dev.jamiecraane.scorchedearth.inventory
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -10,10 +12,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,47 +29,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import kotlinx.coroutines.delay
 
 /**
- * Popup to display the inventory and allow purchasing missiles.
+ * Popup to display the inventory and allow purchasing items.
  */
 @Composable
 fun InventoryPopup(
     game: ScorchedEarthGame,
     onDismiss: () -> Unit
 ) {
+    // Tab state
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
     Popup(
-        alignment = Alignment.Companion.Center,
+        alignment = Alignment.Center,
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
         Card(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .width(600.dp)
                 .padding(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.Companion.DarkGray.copy(alpha = 0.9f)
+                containerColor = Color.DarkGray.copy(alpha = 0.9f)
             ),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
-                modifier = Modifier.Companion.padding(16.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Select Item",
-                    color = Color.Companion.White,
-                    modifier = Modifier.Companion.padding(bottom = 8.dp)
+                    text = "Inventory",
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 // Display player's money
                 Text(
                     text = "Money: $${game.players[game.currentPlayerIndex].money}",
-                    color = Color.Companion.Yellow,
+                    color = Color.Yellow,
                     fontSize = 16.sp,
-                    modifier = Modifier.Companion.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 // Message to show after purchase attempt
@@ -74,8 +81,8 @@ fun InventoryPopup(
                 purchaseMessage?.let { message ->
                     Text(
                         text = message,
-                        color = if (message.contains("Success")) Color.Companion.Green else Color.Companion.Red,
-                        modifier = Modifier.Companion.padding(bottom = 8.dp)
+                        color = if (message.contains("Success")) Color.Green else Color.Red,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
 
                     // Clear message after a delay
@@ -85,41 +92,113 @@ fun InventoryPopup(
                     }
                 }
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // Tabs for different item categories
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
                 ) {
-                    items(ProjectileType.entries.toTypedArray()) { projectileType ->
-                        val currentPlayer = game.players[game.currentPlayerIndex]
-                        val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
-                        val canAfford = currentPlayer.money >= projectileType.cost
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = { selectedTabIndex = 0 },
+                        text = { Text("Weapons") }
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = { selectedTabIndex = 1 },
+                        text = { Text("Shields") }
+                    )
+                }
 
-                        MissileItem(
-                            projectileType = projectileType,
-                            isSelected = currentPlayer.selectedProjectileType == projectileType,
-                            quantity = quantity,
-                            canAfford = canAfford,
-                            onClick = {
-                                // Only allow selection if player has this missile type
-                                if (quantity > 0) {
-                                    val players = game.players.toMutableList()
-                                    players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
-                                        selectedProjectileType = projectileType
-                                    )
-                                    game.players = players
-                                    onDismiss()
-                                }
-                            },
-                            onBuy = {
-                                val success = game.purchaseMissile(projectileType)
-                                if (success) {
-                                    purchaseMessage = "Success! Purchased ${projectileType.displayName}"
-                                } else {
-                                    purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
-                                }
+                when (selectedTabIndex) {
+                    0 -> {
+                        // Weapons tab
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            items(ProjectileType.entries.toTypedArray()) { projectileType ->
+                                val currentPlayer = game.players[game.currentPlayerIndex]
+                                val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
+                                val canAfford = currentPlayer.money >= projectileType.cost
+
+                                InventoryItem(
+                                    itemType = projectileType,
+                                    isSelected = currentPlayer.selectedProjectileType == projectileType,
+                                    quantity = quantity,
+                                    canAfford = canAfford,
+                                    onClick = {
+                                        // Only allow selection if player has this missile type
+                                        if (quantity > 0) {
+                                            val players = game.players.toMutableList()
+                                            players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
+                                                selectedProjectileType = projectileType
+                                            )
+                                            game.players = players
+                                            onDismiss()
+                                        }
+                                    },
+                                    onBuy = {
+                                        val success = game.purchaseMissile(projectileType)
+                                        if (success) {
+                                            purchaseMessage = "Success! Purchased ${projectileType.displayName}"
+                                        } else {
+                                            purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        }
+                    }
+                    1 -> {
+                        // Shields tab
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            items(ShieldType.entries.toTypedArray()) { shieldType ->
+                                val currentPlayer = game.players[game.currentPlayerIndex]
+                                val quantity = currentPlayer.inventory.getItemQuantity(shieldType)
+                                val canAfford = currentPlayer.money >= shieldType.cost
+                                val isSelected = currentPlayer.inventory.isShieldSelected(shieldType)
+
+                                InventoryItem(
+                                    itemType = shieldType,
+                                    isSelected = isSelected,
+                                    quantity = quantity,
+                                    canAfford = canAfford,
+                                    onClick = {
+                                        // Toggle shield selection if player has this shield type
+                                        if (quantity > 0) {
+                                            // Toggle shield selection
+                                            currentPlayer.inventory.toggleShieldSelection(shieldType)
+
+                                            // If shield is now selected, activate it
+                                            if (currentPlayer.inventory.isShieldSelected(shieldType)) {
+                                                game.selectShield(shieldType)
+                                            } else {
+                                                // If shield is now deselected, deactivate it
+                                                game.deactivateShield()
+                                            }
+
+                                            onDismiss()
+                                        }
+                                    },
+                                    onBuy = {
+                                        val success = game.purchaseShield(shieldType)
+                                        if (success) {
+                                            purchaseMessage = "Success! Purchased ${shieldType.displayName}"
+                                        } else {
+                                            purchaseMessage = "Not enough money to buy ${shieldType.displayName}"
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }

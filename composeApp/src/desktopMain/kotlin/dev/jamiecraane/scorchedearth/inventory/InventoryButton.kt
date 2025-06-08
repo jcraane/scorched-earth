@@ -16,44 +16,57 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 
 /**
- * Button to display the current missile and open the inventory popup.
+ * Button to display the current inventory item and open the inventory popup.
  */
 @Composable
 fun InventoryButton(
-    currentMissile: ProjectileType,
-    currentMissileQuantity: Int,
+    currentItem: ItemType?,
+    currentItemQuantity: Int,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Companion.DarkGray.copy(alpha = 0.7f)
+            containerColor = Color.DarkGray.copy(alpha = 0.7f)
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.Companion.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "${currentMissile.displayName} (Damage: ${currentMissile.minDamage}-${currentMissile.maxDamage})",
-                color = Color.Companion.White
-            )
+            if (currentItem != null) {
+                // Display item details based on type
+                val itemDetails = when (currentItem) {
+                    is ProjectileType -> "Damage: ${currentItem.minDamage}-${currentItem.maxDamage}"
+                    is ShieldType -> "Health: ${currentItem.maxHealth}"
+                    else -> ""
+                }
 
-            // Display quantity
-            Text(
-                text = "Qty: $currentMissileQuantity",
-                color = if (currentMissileQuantity > 0) Color.Companion.White else Color.Companion.Red
-            )
+                Text(
+                    text = "${currentItem.displayName} ($itemDetails)",
+                    color = Color.White
+                )
+
+                // Display quantity
+                Text(
+                    text = "Qty: $currentItemQuantity",
+                    color = if (currentItemQuantity > 0) Color.White else Color.Red
+                )
+            } else {
+                Text(
+                    text = "No item selected",
+                    color = Color.Gray
+                )
+            }
         }
     }
 }

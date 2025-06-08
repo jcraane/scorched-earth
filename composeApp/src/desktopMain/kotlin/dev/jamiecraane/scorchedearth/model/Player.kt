@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.GenericInventory
 import dev.jamiecraane.scorchedearth.inventory.ShieldType
+import dev.jamiecraane.scorchedearth.inventory.ItemType
 import dev.jamiecraane.scorchedearth.shield.Shield
 
 /**
@@ -37,15 +38,40 @@ data class Player(
     // Elimination tracking
     var eliminationOrder: Int = -1, // -1 means not eliminated yet
     // Shield properties
-    var activeShield: Shield? = null,
-    var selectedShieldType: ShieldType? = null
+    var activeShield: Shield? = null
 ) {
+    /**
+     * Gets the selected shield type from the inventory.
+     * @return The selected shield type, or null if no shield is selected
+     */
+    fun getSelectedShieldType(): ShieldType? {
+        return inventory.getSelectedShield() as? ShieldType
+    }
+
+    /**
+     * Toggles the selection of a shield in the inventory.
+     * @param shieldType The shield type to toggle
+     * @return True if the shield is now selected, false if it was deselected
+     */
+    fun toggleShieldSelection(shieldType: ShieldType): Boolean {
+        return inventory.toggleShieldSelection(shieldType)
+    }
+
+    /**
+     * Checks if a shield is currently selected in the inventory.
+     * @param shieldType The shield type to check
+     * @return True if the specified shield is selected
+     */
+    fun isShieldSelected(shieldType: ShieldType): Boolean {
+        return inventory.isShieldSelected(shieldType)
+    }
+
     /**
      * Activates the selected shield if it's available in the inventory.
      * @return True if shield was activated, false otherwise
      */
     fun activateShield(): Boolean {
-        val shieldType = selectedShieldType ?: return false
+        val shieldType = getSelectedShieldType() ?: return false
 
         // Check if player has this shield type in inventory
         if (!inventory.hasItem(shieldType)) {

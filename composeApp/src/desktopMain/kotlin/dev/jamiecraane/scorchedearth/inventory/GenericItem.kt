@@ -15,6 +15,7 @@ data class GenericItem(
  */
 class GenericInventory {
     private val items = mutableMapOf<ItemType, GenericItem>()
+    private var selectedShield: ItemType? = null
 
     /**
      * Adds the specified quantity of an item to the inventory.
@@ -77,5 +78,39 @@ class GenericInventory {
      */
     fun hasItem(type: ItemType, quantity: Int = 1): Boolean {
         return getItemQuantity(type) >= quantity
+    }
+
+    /**
+     * Toggles the selection of a shield.
+     * @param type The type of shield to toggle
+     * @return True if the shield is now selected, false if it was deselected
+     */
+    fun toggleShieldSelection(type: ItemType): Boolean {
+        if (selectedShield == type) {
+            // Deselect the shield
+            selectedShield = null
+            return false
+        } else {
+            // Select the shield
+            selectedShield = type
+            return true
+        }
+    }
+
+    /**
+     * Gets the currently selected shield.
+     * @return The selected shield type, or null if no shield is selected
+     */
+    fun getSelectedShield(): ItemType? {
+        return selectedShield
+    }
+
+    /**
+     * Checks if a shield is currently selected.
+     * @param type The shield type to check
+     * @return True if the specified shield is selected
+     */
+    fun isShieldSelected(type: ItemType): Boolean {
+        return selectedShield == type
     }
 }

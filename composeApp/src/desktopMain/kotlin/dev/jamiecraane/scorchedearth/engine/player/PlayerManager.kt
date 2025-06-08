@@ -72,7 +72,8 @@ class PlayerManager {
                     inventory.addItem(ProjectileType.TRACER, 10)
                     inventory.addItem(ProjectileType.ROLLER, 2)
                     inventory.addItem(ShieldType.BASIC_SHIELD, 1)
-                    selectedShieldType = ShieldType.BASIC_SHIELD
+                    // Select the shield by default
+                    toggleShieldSelection(ShieldType.BASIC_SHIELD)
                 }
             )
         }

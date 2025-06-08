@@ -1,14 +1,12 @@
 package dev.jamiecraane.scorchedearth.inventory
 
-import dev.jamiecraane.scorchedearth.inventory.ProjectileType
-
 /**
  * Represents an item in a player's inventory.
- * @param type The type of projectile this item represents
+ * @param type The type of item this represents
  * @param quantity The number of this item in the inventory
  */
 data class Item(
-    val type: ProjectileType,
+    val type: ItemType,
     var quantity: Int
 )
 
@@ -16,14 +14,15 @@ data class Item(
  * Represents a player's inventory of items.
  */
 class Inventory {
-    private val items = mutableMapOf<ProjectileType, Item>()
+    private val items = mutableMapOf<ItemType, Item>()
+    private var selectedShield: ItemType? = null
 
     /**
      * Adds the specified quantity of an item to the inventory.
-     * @param type The type of projectile to add
+     * @param type The type of item to add
      * @param quantity The quantity to add
      */
-    fun addItem(type: ProjectileType, quantity: Int) {
+    fun addItem(type: ItemType, quantity: Int) {
         val existingItem = items[type]
         if (existingItem != null) {
             existingItem.quantity += quantity
@@ -34,11 +33,11 @@ class Inventory {
 
     /**
      * Removes the specified quantity of an item from the inventory.
-     * @param type The type of projectile to remove
+     * @param type The type of item to remove
      * @param quantity The quantity to remove
      * @return True if the item was successfully removed, false if there weren't enough items
      */
-    fun removeItem(type: ProjectileType, quantity: Int): Boolean {
+    fun removeItem(type: ItemType, quantity: Int): Boolean {
         val existingItem = items[type] ?: return false
 
         if (existingItem.quantity < quantity) {
@@ -56,10 +55,10 @@ class Inventory {
 
     /**
      * Gets the quantity of a specific item type in the inventory.
-     * @param type The type of projectile to check
+     * @param type The type of item to check
      * @return The quantity of the item, or 0 if not present
      */
-    fun getItemQuantity(type: ProjectileType): Int {
+    fun getItemQuantity(type: ItemType): Int {
         return items[type]?.quantity ?: 0
     }
 
@@ -73,11 +72,45 @@ class Inventory {
 
     /**
      * Checks if the inventory has at least the specified quantity of an item.
-     * @param type The type of projectile to check
+     * @param type The type of item to check
      * @param quantity The minimum quantity required
      * @return True if the inventory has at least the specified quantity
      */
-    fun hasItem(type: ProjectileType, quantity: Int = 1): Boolean {
+    fun hasItem(type: ItemType, quantity: Int = 1): Boolean {
         return getItemQuantity(type) >= quantity
+    }
+
+    /**
+     * Toggles the selection of a shield.
+     * @param type The type of shield to toggle
+     * @return True if the shield is now selected, false if it was deselected
+     */
+    fun toggleShieldSelection(type: ItemType): Boolean {
+        if (selectedShield == type) {
+            // Deselect the shield
+            selectedShield = null
+            return false
+        } else {
+            // Select the shield
+            selectedShield = type
+            return true
+        }
+    }
+
+    /**
+     * Gets the currently selected shield.
+     * @return The selected shield type, or null if no shield is selected
+     */
+    fun getSelectedShield(): ItemType? {
+        return selectedShield
+    }
+
+    /**
+     * Checks if a shield is currently selected.
+     * @param type The shield type to check
+     * @return True if the specified shield is selected
+     */
+    fun isShieldSelected(type: ItemType): Boolean {
+        return selectedShield == type
     }
 }

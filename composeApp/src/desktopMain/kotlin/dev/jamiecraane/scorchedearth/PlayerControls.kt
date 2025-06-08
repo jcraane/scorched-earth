@@ -13,7 +13,7 @@ import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 @Composable
 fun PlayerControls(
     game: ScorchedEarthGame,
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
@@ -22,19 +22,16 @@ fun PlayerControls(
     ) {
         PlayerAndWindInfo(game)
 
-        Spacer(modifier = Modifier.Companion.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         AngleControl(game)
 
         PowerControl(game)
 
-        MissileSelector(game)
+        // Combined inventory selector for both missiles and shields
+        InventorySelector(game)
 
-        Spacer(modifier = Modifier.Companion.height(8.dp))
-
-        ShieldSelector(game)
-
-        Spacer(modifier = Modifier.Companion.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         FireButton(game)
     }
