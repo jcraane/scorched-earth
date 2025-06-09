@@ -48,7 +48,8 @@ fun InventorySelector(game: ScorchedEarthGame) {
         if (showInventoryPopup) {
             InventoryPopup(
                 game = game,
-                onDismiss = { showInventoryPopup = false }
+                onDismiss = { showInventoryPopup = false },
+                showBuyButton = false // Explicitly disable buy button during gameplay
             )
         }
     }

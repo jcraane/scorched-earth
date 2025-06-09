@@ -39,7 +39,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun InventoryPopup(
     game: ScorchedEarthGame,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    showBuyButton: Boolean = false
 ) {
     // Tab state
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -155,14 +156,16 @@ fun InventoryPopup(
                                             game.players = players
                                         }
                                     },
-                                    onBuy = {
-                                        val success = game.purchaseMissile(projectileType)
-                                        if (success) {
-                                            purchaseMessage = "Success! Purchased ${projectileType.displayName}"
-                                        } else {
-                                            purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
+                                    onBuy = if (showBuyButton) {
+                                        {
+                                            val success = game.purchaseMissile(projectileType)
+                                            if (success) {
+                                                purchaseMessage = "Success! Purchased ${projectileType.displayName}"
+                                            } else {
+                                                purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
+                                            }
                                         }
-                                    }
+                                    } else null
                                 )
                             }
                         }
@@ -193,14 +196,16 @@ fun InventoryPopup(
                                             game.selectShield(shieldType)
                                         }
                                     },
-                                    onBuy = {
-                                        val success = game.purchaseShield(shieldType)
-                                        if (success) {
-                                            purchaseMessage = "Success! Purchased ${shieldType.displayName}"
-                                        } else {
-                                            purchaseMessage = "Not enough money to buy ${shieldType.displayName}"
+                                    onBuy = if (showBuyButton) {
+                                        {
+                                            val success = game.purchaseShield(shieldType)
+                                            if (success) {
+                                                purchaseMessage = "Success! Purchased ${shieldType.displayName}"
+                                            } else {
+                                                purchaseMessage = "Not enough money to buy ${shieldType.displayName}"
+                                            }
                                         }
-                                    }
+                                    } else null
                                 )
                             }
                         }

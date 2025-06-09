@@ -15,12 +15,16 @@
 - ✅fall damage
 - ✅shield
 
+- Shop before each round, inventory not be able to buy stuff
 - money earn scheme
   - player kills other player -> 2500
   - player deals damage: damage * 20
   - When round ends: Each player gets ((num players - position) * 1000). So the lower you end the less money you get. Last one gets nothing with this scheme.
-- Shop before each round, inventory not be able to buy stuff
 - tank should stand on bottom if no terrain is present
 - sounds
+
+- lighting
+- meteor shower
+- More random terrain between rounds
 
 - Teams

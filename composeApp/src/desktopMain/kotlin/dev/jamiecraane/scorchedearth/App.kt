@@ -28,6 +28,12 @@ fun App() {
     // State to track player setups (name and type)
     var playerSetups by remember { mutableStateOf(listOf<PlayerSetup>()) }
 
+    // State to track the current player index for inventory selection
+    var currentInventoryPlayerIndex by remember { mutableStateOf(0) }
+
+    // State to track the list of players with their inventories
+    var players by remember { mutableStateOf(listOf<dev.jamiecraane.scorchedearth.model.Player>()) }
+
     // State to track the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
 
@@ -58,22 +64,49 @@ fun App() {
                 numberOfPlayers = numberOfPlayers,
                 onComplete = { setups ->
                     playerSetups = setups
-                    currentScreen = Screen.GAME
-                }
-            )
-        }
 
-        Screen.GAME -> {
-            // Game is started, create the game instance
-            val game = remember(numberOfPlayers, playerSetups, selectedSkyStyle, terrainVariance, numberOfRounds) {
-                ScorchedEarthGame(numberOfPlayers, numberOfRounds).apply {
-                    // Set player names and types
-                    players.forEachIndexed { index, player ->
+                    // Initialize players list with player setups
+                    val game = ScorchedEarthGame(numberOfPlayers, numberOfRounds)
+                    game.players.forEachIndexed { index, player ->
                         if (index < playerSetups.size) {
                             player.name = playerSetups[index].name
                             player.type = playerSetups[index].type
                         }
                     }
+                    players = game.players.toList()
+
+                    // Reset current inventory player index
+                    currentInventoryPlayerIndex = 0
+
+                    // Transition to inventory screen
+                    currentScreen = Screen.INVENTORY
+                }
+            )
+        }
+
+        Screen.INVENTORY -> {
+            PlayerInventoryScreen(
+                players = players,
+                currentPlayerIndex = currentInventoryPlayerIndex,
+                onComplete = {
+                    // Move to next player or start game if all players have selected items
+                    if (currentInventoryPlayerIndex < players.size - 1) {
+                        // Move to next player
+                        currentInventoryPlayerIndex++
+                    } else {
+                        // All players have selected their items, start the game
+                        currentScreen = Screen.GAME
+                    }
+                }
+            )
+        }
+
+        Screen.GAME -> {
+            // Game is started, create the game instance with the players from inventory selection
+            val game = remember(players, selectedSkyStyle, terrainVariance, numberOfRounds) {
+                ScorchedEarthGame(players.size, numberOfRounds).apply {
+                    // Set the players from inventory selection
+                    this.players = players.toMutableList()
 
                     // Set the sky style
                     skyStyle = selectedSkyStyle.toSkyStyle()
@@ -105,5 +138,6 @@ fun App() {
 enum class Screen {
     INTRO,
     PLAYER_NAMES,
+    INVENTORY,
     GAME
 }
