@@ -98,18 +98,7 @@ fun PlayerInventoryScreen(
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Continue button
-            Button(
-                onClick = onComplete,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(56.dp)
-            ) {
-                Text(
-                    text = "Continue",
-                    fontSize = 20.sp
-                )
-            }
+            // Note: Continue button removed as it's now part of the inventory popup
         }
 
         // Show inventory popup
@@ -117,15 +106,10 @@ fun PlayerInventoryScreen(
             InventoryPopup(
                 game = tempGame,
                 onDismiss = { showInventory = false },
-                showBuyButton = true
+                showBuyButton = true,
+                isLastPlayer = currentPlayerIndex == players.size - 1,
+                onNext = onComplete
             )
-        }
-
-        // If inventory is closed, show it again (we want it to stay open during this screen)
-        LaunchedEffect(showInventory) {
-            if (!showInventory) {
-                showInventory = true
-            }
         }
     }
 }

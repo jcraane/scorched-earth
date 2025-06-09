@@ -40,7 +40,9 @@ import kotlinx.coroutines.delay
 fun InventoryPopup(
     game: ScorchedEarthGame,
     onDismiss: () -> Unit,
-    showBuyButton: Boolean = false
+    showBuyButton: Boolean = false,
+    isLastPlayer: Boolean = false,
+    onNext: (() -> Unit)? = null
 ) {
     // Tab state
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -208,6 +210,24 @@ fun InventoryPopup(
                                     } else null
                                 )
                             }
+                        }
+                    }
+                }
+
+                // Add Next/Start button if onNext callback is provided
+                onNext?.let {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        androidx.compose.material3.Button(
+                            onClick = onNext
+                        ) {
+                            Text(
+                                text = if (isLastPlayer) "Start Game" else "Next Player"
+                            )
                         }
                     }
                 }
