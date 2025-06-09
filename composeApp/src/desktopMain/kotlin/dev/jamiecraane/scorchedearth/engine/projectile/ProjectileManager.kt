@@ -59,7 +59,7 @@ class ProjectileManager(
      * @return Wind speed in pixels per second (negative = left, positive = right)
      */
     fun generateWind(): Float {
-        wind = Random.nextFloat() * 20f - 10f
+        wind = Random.nextFloat() * 40f - 20f
         return wind
     }
 
