@@ -15,11 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import dev.jamiecraane.scorchedearth.ConfirmationDialog
 import dev.jamiecraane.scorchedearth.GameStatistics
+import dev.jamiecraane.scorchedearth.PlayerInventoryScreen
 import dev.jamiecraane.scorchedearth.RoundStatistics
 import dev.jamiecraane.scorchedearth.drawGame
 import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.GameState
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
+import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.PlayerType
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import kotlinx.coroutines.delay
@@ -154,7 +156,33 @@ fun GameUI(
             RoundStatistics(
                 currentRound = game.currentRound,
                 players = game.players,
-                onNextCLick = { game.transitionToNextRound() }
+                onNextCLick = {
+                    // Change to inventory selection state instead of directly transitioning to next round
+                    game.gameState = GameState.INVENTORY_SELECTION
+                    // Reset current player index for inventory selection
+                    game.currentPlayerIndex = 0
+                }
+            )
+        }
+
+        // Inventory selection dialog after round statistics
+        if (game.gameState == GameState.INVENTORY_SELECTION) {
+            PlayerInventoryScreen(
+                players = game.players,
+                currentPlayerIndex = game.currentPlayerIndex,
+                onComplete = { updatedPlayers: List<Player> ->
+                    // Update the players list with the modified players
+                    game.players = updatedPlayers
+
+                    // Move to next player or transition to next round if all players have selected items
+                    if (game.currentPlayerIndex < game.players.size - 1) {
+                        // Move to next player
+                        game.currentPlayerIndex++
+                    } else {
+                        // All players have selected their items, transition to next round
+                        game.transitionToNextRound()
+                    }
+                }
             )
         }
 

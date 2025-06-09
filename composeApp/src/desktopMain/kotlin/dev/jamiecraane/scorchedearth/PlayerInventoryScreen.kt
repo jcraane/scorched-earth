@@ -20,7 +20,8 @@ import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.PlayerType
 
 /**
- * Screen for players to select items from the inventory before the game starts.
+ * Screen for players to select items from the inventory before the game starts and after each round.
+ * This allows players to replenish their items between rounds.
  *
  * @param players The list of players in the game
  * @param currentPlayerIndex The index of the current player selecting items

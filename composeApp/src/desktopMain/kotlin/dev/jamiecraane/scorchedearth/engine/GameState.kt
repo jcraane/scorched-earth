@@ -8,5 +8,6 @@ enum class GameState {
     AIMING,
     PROJECTILE_IN_FLIGHT,
     ROUND_STATISTICS,
+    INVENTORY_SELECTION,
     GAME_OVER
 }
