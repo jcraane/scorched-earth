@@ -33,6 +33,10 @@ import androidx.compose.ui.window.PopupProperties
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import kotlinx.coroutines.delay
 
+private const val TAB_WEAPONS = 0
+
+private const val TAB_MISC = 1
+
 /**
  * Popup to display the inventory and allow purchasing items.
  */
@@ -45,7 +49,7 @@ fun InventoryPopup(
     onNext: (() -> Unit)? = null
 ) {
     // Tab state
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(TAB_WEAPONS) }
 
     Popup(
         alignment = Alignment.Center,
@@ -126,19 +130,19 @@ fun InventoryPopup(
                     contentColor = Color.White
                 ) {
                     Tab(
-                        selected = selectedTabIndex == 0,
-                        onClick = { selectedTabIndex = 0 },
+                        selected = selectedTabIndex == TAB_WEAPONS,
+                        onClick = { selectedTabIndex = TAB_WEAPONS },
                         text = { Text("Weapons") }
                     )
                     Tab(
-                        selected = selectedTabIndex == 1,
-                        onClick = { selectedTabIndex = 1 },
+                        selected = selectedTabIndex == TAB_MISC,
+                        onClick = { selectedTabIndex = TAB_MISC },
                         text = { Text("Shields") }
                     )
                 }
 
                 when (selectedTabIndex) {
-                    0 -> {
+                    TAB_WEAPONS -> {
                         // Weapons tab
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(4),
@@ -151,36 +155,37 @@ fun InventoryPopup(
                                 val quantity = currentPlayer.inventory.getItemQuantity(projectileType)
                                 val canAfford = currentPlayer.money >= projectileType.cost
 
-                                InventoryItem(
-                                    itemType = projectileType,
-                                    isSelected = currentPlayer.selectedProjectileType == projectileType,
-                                    quantity = quantity,
-                                    canAfford = canAfford,
-                                    onClick = {
-                                        // Only allow selection if player has this missile type
-                                        if (quantity > 0) {
-                                            val players = game.players.toMutableList()
-                                            players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
-                                                selectedProjectileType = projectileType
-                                            )
-                                            game.players = players
-                                        }
-                                    },
-                                    onBuy = if (showBuyButton) {
-                                        {
-                                            val success = game.purchaseMissile(projectileType)
-                                            if (success) {
-                                                purchaseMessage = "Success! Purchased ${projectileType.displayName}"
-                                            } else {
-                                                purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
+                                if ((quantity == 0 && showBuyButton) || quantity > 0) {
+                                    InventoryItem(
+                                        itemType = projectileType,
+                                        isSelected = currentPlayer.selectedProjectileType == projectileType,
+                                        quantity = quantity,
+                                        canAfford = canAfford,
+                                        onClick = {
+                                            // Only allow selection if player has this missile type
+                                            if (quantity > 0) {
+                                                val players = game.players.toMutableList()
+                                                players[game.currentPlayerIndex] = players[game.currentPlayerIndex].copy(
+                                                    selectedProjectileType = projectileType
+                                                )
+                                                game.players = players
                                             }
-                                        }
-                                    } else null
-                                )
+                                        },
+                                        onBuy = if (showBuyButton) { {
+                                                val success = game.purchaseMissile(projectileType)
+                                                if (success) {
+                                                    purchaseMessage = "Success! Purchased ${projectileType.displayName}"
+                                                } else {
+                                                    purchaseMessage = "Not enough money to buy ${projectileType.displayName}"
+                                                }
+                                            }
+                                        } else null
+                                    )
+                                }
                             }
                         }
                     }
-                    1 -> {
+                    TAB_MISC -> {
                         // Shields tab
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(4),
@@ -194,29 +199,31 @@ fun InventoryPopup(
                                 val canAfford = currentPlayer.money >= shieldType.cost
                                 val isSelected = currentPlayer.inventory.isShieldSelected(shieldType)
 
-                                InventoryItem(
-                                    itemType = shieldType,
-                                    isSelected = isSelected,
-                                    quantity = quantity,
-                                    canAfford = canAfford,
-                                    onClick = {
-                                        // Toggle shield selection if player has this shield type
-                                        if (quantity > 0) {
-                                            // Toggle shield selection
-                                            game.selectShield(shieldType)
-                                        }
-                                    },
-                                    onBuy = if (showBuyButton) {
-                                        {
-                                            val success = game.purchaseShield(shieldType)
-                                            if (success) {
-                                                purchaseMessage = "Success! Purchased ${shieldType.displayName}"
-                                            } else {
-                                                purchaseMessage = "Not enough money to buy ${shieldType.displayName}"
+                                if ((quantity == 0 && showBuyButton) || quantity > 0) {
+                                    InventoryItem(
+                                        itemType = shieldType,
+                                        isSelected = isSelected,
+                                        quantity = quantity,
+                                        canAfford = canAfford,
+                                        onClick = {
+                                            // Toggle shield selection if player has this shield type
+                                            if (quantity > 0) {
+                                                // Toggle shield selection
+                                                game.selectShield(shieldType)
                                             }
-                                        }
-                                    } else null
-                                )
+                                        },
+                                        onBuy = if (showBuyButton) {
+                                            {
+                                                val success = game.purchaseShield(shieldType)
+                                                if (success) {
+                                                    purchaseMessage = "Success! Purchased ${shieldType.displayName}"
+                                                } else {
+                                                    purchaseMessage = "Not enough money to buy ${shieldType.displayName}"
+                                                }
+                                            }
+                                        } else null
+                                    )
+                                }
                             }
                         }
                     }
