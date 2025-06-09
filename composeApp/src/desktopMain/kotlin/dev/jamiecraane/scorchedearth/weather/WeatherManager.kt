@@ -25,6 +25,9 @@ class WeatherManager {
     private var gameWidth = 0f
     private var gameHeight = 0f
 
+    // Function to get terrain height at a specific X coordinate
+    private var getTerrainHeightAtX: ((Float) -> Float)? = null
+
     // Rain settings
     private val maxRainDrops = 200
     private val rainSpeed = 300f // Base speed of rain in pixels per second
@@ -42,6 +45,14 @@ class WeatherManager {
         if (weatherTypeState == WeatherType.RAIN) {
             generateRainDrops()
         }
+    }
+
+    /**
+     * Sets the function to get terrain height at a specific X coordinate.
+     * @param getHeightFunc Function that takes an X coordinate and returns the terrain height at that point
+     */
+    fun setTerrainHeightFunction(getHeightFunc: (Float) -> Float) {
+        getTerrainHeightAtX = getHeightFunc
     }
 
     /**
@@ -153,12 +164,23 @@ class WeatherManager {
         val strikeX = Random.nextFloat() * gameWidth
         val spread = (30f + Random.nextFloat() * 50f) * 2f // Random spread between 60-160px (doubled from original 30-80px)
 
+        // Determine the actual terrain height at the strike position
+        // If terrain height function is not set, use a default height (70% of game height)
+        val terrainY = if (getTerrainHeightAtX != null) {
+            getTerrainHeightAtX!!(strikeX)
+        } else {
+            gameHeight * 0.7f // Fallback to approximate ground level
+        }
+
+        println("[DEBUG_LOG] Lightning strike at x=$strikeX will hit terrain at y=$terrainY")
+
         val newLightning = Lightning(
             strikePosition = Offset(strikeX, 0f), // Lightning strikes from the top
+            groundPosition = Offset(strikeX, terrainY), // Lightning hits the actual terrain
             spread = spread
         )
 
-        println("[DEBUG_LOG] Created lightning at x=$strikeX with spread=$spread")
+        println("[DEBUG_LOG] Created lightning at x=$strikeX with spread=$spread, terrainY=$terrainY")
         println("[DEBUG_LOG] New lightning has empty hit players set: ${newLightning.hitPlayers.isEmpty()}")
 
         lightning = newLightning
@@ -200,9 +222,8 @@ class WeatherManager {
             return false
         }
 
-        // Calculate the ground position where lightning hits
-        val groundY = gameHeight * 0.7f // Approximate ground level, same as in WeatherRenderer
-        val strikeGroundPosition = Offset(currentLightning.strikePosition.x, groundY)
+        // Use the actual ground position where lightning hits the terrain
+        val strikeGroundPosition = currentLightning.groundPosition
 
         // Calculate distance from player to lightning strike point on ground
         val distanceToStrike = kotlin.math.sqrt(
@@ -314,7 +335,8 @@ data class RainDrop(
  * Data class representing a lightning strike.
  */
 data class Lightning(
-    val strikePosition: Offset, // Position where lightning hits the ground
+    val strikePosition: Offset, // Position where lightning starts (top of screen)
+    val groundPosition: Offset, // Position where lightning hits the ground (actual terrain)
     val spread: Float, // Spread of the lightning on the ground (30-80px)
     val timeRemaining: Float = 0.5f, // Time in seconds the lightning will be visible
     val damage: Int = 30, // Damage caused by lightning (reduced from 15)

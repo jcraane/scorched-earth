@@ -68,6 +68,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Initialize weather manager
         weatherManager.setGameDimensions(gameWidth, gameHeight)
+        // Set terrain height function in weather manager
+        weatherManager.setTerrainHeightFunction(terrainManager::getTerrainHeightAtX)
     }
 
     /**
@@ -123,6 +125,8 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Update game dimensions in weather manager
         weatherManager.setGameDimensions(width, height)
+        // Update terrain height function in weather manager
+        weatherManager.setTerrainHeightFunction(terrainManager::getTerrainHeightAtX)
     }
 
     /**

@@ -49,13 +49,13 @@ object WeatherRenderer {
         val lightningCoreColor = Color(0xFFFFFFFF) // Bright white core
         val lightningOuterColor = Color(0xAAB0E0FF) // Light blue outer glow
 
-        // Calculate the ground position where lightning hits
-        val groundY = drawScope.size.height * 0.7f // Approximate ground level
+        // Use the actual ground position where lightning hits the terrain
+        val groundPosition = lightning.groundPosition
         val startX = lightning.strikePosition.x
 
         // Draw the main lightning bolt (zigzag line from top to ground)
         val segments = 8 // Number of zigzag segments
-        val segmentHeight = groundY / segments
+        val segmentHeight = groundPosition.y / segments
 
         var currentX = startX
         var currentY = 0f
@@ -94,14 +94,14 @@ object WeatherRenderer {
         drawScope.drawCircle(
             color = lightningOuterColor.copy(alpha = 0.6f),
             radius = impactRadius,
-            center = Offset(currentX, groundY)
+            center = Offset(currentX, groundPosition.y)
         )
 
         // Draw inner bright impact
         drawScope.drawCircle(
             color = lightningCoreColor.copy(alpha = 0.8f),
             radius = impactRadius * 0.6f,
-            center = Offset(currentX, groundY)
+            center = Offset(currentX, groundPosition.y)
         )
     }
 
