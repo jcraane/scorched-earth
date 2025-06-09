@@ -50,7 +50,7 @@ fun FireButton(
             Text(
                 text = "No ${game.players[game.currentPlayerIndex].selectedProjectileType.displayName} missiles left!",
                 color = Color.Companion.Red,
-                modifier = Modifier.Companion.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
 
             // Hide the message after a delay
