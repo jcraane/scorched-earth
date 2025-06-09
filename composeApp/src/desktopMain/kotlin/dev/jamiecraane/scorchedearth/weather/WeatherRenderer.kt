@@ -33,10 +33,10 @@ object WeatherRenderer {
         val rainColor = Color(0x99AADDFF) // Semi-transparent light blue
 
         for (drop in weatherManager.rainDrops) {
-            // Calculate the angle based on wind (stronger wind = more angle)
-            val angle = wind * 0.05f // Convert wind to angle in radians
+            // Use the raindrop's angle property which represents its fall direction
+            val angle = drop.angle
 
-            // Calculate the end point of the rain drop based on its length and angle
+            // Calculate the end point of the main raindrop based on its length and angle
             val endX = drop.position.x + cos(angle) * drop.length
             val endY = drop.position.y + sin(angle) * drop.length
 

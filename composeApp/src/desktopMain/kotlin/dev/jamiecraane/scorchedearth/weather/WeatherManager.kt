@@ -61,15 +61,22 @@ class WeatherManager {
     private fun generateRainDrops() {
         val newRainDrops = mutableListOf<RainDrop>()
 
+        // Use a default wind value for initial angle calculation
+        val defaultWind = 0f
+
         for (i in 0 until maxRainDrops) {
+            // Calculate a default angle based on a vertical drop with slight wind influence
+            val initialAngle = kotlin.math.atan2(1f, -defaultWind * 0.1f)
+
             newRainDrops.add(
                 RainDrop(
                     position = Offset(
                         Random.nextFloat() * gameWidth,
                         Random.nextFloat() * gameHeight
                     ),
-                    length = Random.nextFloat() * 10f + 5f, // Random length between 5 and 15
-                    speed = rainSpeed + Random.nextFloat() * 100f // Random speed variation
+                    length = Random.nextFloat() * 20f + 10f, // Random length between 10 and 30
+                    speed = rainSpeed + Random.nextFloat() * 100f, // Random speed variation
+                    angle = initialAngle
                 )
             )
         }
@@ -98,11 +105,21 @@ class WeatherManager {
 
         for (drop in rainDrops) {
             // Calculate new position based on speed, wind, and gravity
-            val newX = drop.position.x + wind * deltaTime * 2f // Wind affects horizontal movement
-            val newY = drop.position.y + drop.speed * deltaTime // Gravity affects vertical movement
+            val horizontalMovement = wind * deltaTime * 2f // Wind affects horizontal movement
+            val verticalMovement = drop.speed * deltaTime // Gravity affects vertical movement
+
+            val newX = drop.position.x + horizontalMovement
+            val newY = drop.position.y + verticalMovement
+
+            // Calculate the angle based on the movement vector
+            // atan2 returns the angle in radians between the positive x-axis and the point (x,y)
+            // We use negative horizontalMovement because we want the tail to be behind the raindrop
+            val angle = kotlin.math.atan2(verticalMovement, -horizontalMovement)
 
             // If rain drop is off-screen, reset it to the top with a random x position
             if (newY > gameHeight) {
+                // For new raindrops at the top, calculate a default angle based on wind
+                val newDropAngle = kotlin.math.atan2(1f, -wind * 0.1f) // Default angle based on wind
                 updatedRainDrops.add(
                     RainDrop(
                         position = Offset(
@@ -110,11 +127,15 @@ class WeatherManager {
                             0f - Random.nextFloat() * 50f // Start slightly above the screen
                         ),
                         length = drop.length,
-                        speed = drop.speed
+                        tailLength = drop.tailLength,
+                        speed = drop.speed,
+                        angle = newDropAngle
                     )
                 )
             } else if (newX < 0 || newX > gameWidth) {
                 // If rain drop goes off the sides, reset it to the top with a random x position
+                // For new raindrops at the top, calculate a default angle based on wind
+                val newDropAngle = kotlin.math.atan2(1f, -wind * 0.1f) // Default angle based on wind
                 updatedRainDrops.add(
                     RainDrop(
                         position = Offset(
@@ -122,7 +143,9 @@ class WeatherManager {
                             0f - Random.nextFloat() * 50f // Start slightly above the screen
                         ),
                         length = drop.length,
-                        speed = drop.speed
+                        tailLength = drop.tailLength,
+                        speed = drop.speed,
+                        angle = newDropAngle
                     )
                 )
             } else {
@@ -131,7 +154,9 @@ class WeatherManager {
                     RainDrop(
                         position = Offset(newX, newY),
                         length = drop.length,
-                        speed = drop.speed
+                        tailLength = drop.tailLength,
+                        speed = drop.speed,
+                        angle = angle
                     )
                 )
             }
@@ -147,5 +172,7 @@ class WeatherManager {
 data class RainDrop(
     val position: Offset,
     val length: Float,
-    val speed: Float
+    val tailLength: Float = length * 0.5f, // Tail length as a proportion of the main drop length
+    val speed: Float,
+    val angle: Float = 0f // Angle in radians representing the direction of fall
 )
