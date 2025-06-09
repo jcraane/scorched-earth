@@ -40,6 +40,10 @@ class ProjectileManager(
     // Environmental factors
     var wind by mutableStateOf(0f)
 
+    // Turn counter for wind changes
+    private var turnCounter = 0
+    private var nextWindChangeTurn = 0
+
     // Game dimensions
     private var gameWidth = 0f
     private var gameHeight = 0f
@@ -60,6 +64,9 @@ class ProjectileManager(
      */
     fun generateWind(): Float {
         wind = Random.nextFloat() * 40f - 20f
+        // Set the next turn when wind will change (3-8 turns from now)
+        nextWindChangeTurn = turnCounter + Random.nextInt(3, 9)
+        println("[DEBUG_LOG] Wind generated: $wind, next change at turn $nextWindChangeTurn")
         return wind
     }
 
@@ -367,7 +374,14 @@ class ProjectileManager(
             playerManager.nextPlayer()
             // Reset the tracer flag for the new player
             hasPlayerFiredTracerThisTurn = false
-            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player")
+
+            // Increment turn counter and check if wind should change
+            turnCounter++
+            if (turnCounter >= nextWindChangeTurn) {
+                generateWind()
+            }
+
+            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player, turn counter: $turnCounter")
             return true
         }
 
@@ -722,7 +736,14 @@ class ProjectileManager(
                 playerManager.nextPlayer()
                 // Reset the tracer flag for the new player
                 hasPlayerFiredTracerThisTurn = false
-                println("[DEBUG_LOG] Turn ended, switching to next player")
+
+                // Increment turn counter and check if wind should change
+                turnCounter++
+                if (turnCounter >= nextWindChangeTurn) {
+                    generateWind()
+                }
+
+                println("[DEBUG_LOG] Turn ended, switching to next player, turn counter: $turnCounter")
                 return true
             }
         } else {
@@ -739,5 +760,8 @@ class ProjectileManager(
         projectile = null
         miniBombs = listOf()
         hasPlayerFiredTracerThisTurn = false
+        turnCounter = 0
+        nextWindChangeTurn = Random.nextInt(3, 9)
+        println("[DEBUG_LOG] Reset turn counter and set next wind change at turn $nextWindChangeTurn")
     }
 }
