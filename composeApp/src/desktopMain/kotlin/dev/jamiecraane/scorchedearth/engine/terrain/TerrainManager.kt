@@ -31,6 +31,9 @@ class TerrainManager {
      * @return A Path object representing the terrain
      */
     fun generateTerrain(width: Float, height: Float): Path {
+        // Update the stored game height for ground level calculations
+        this.gameHeight = height
+
         val path = Path()
         val baseHeight = height * 0.7f
         val segments = 100
@@ -93,6 +96,9 @@ class TerrainManager {
      * @param height Height of the game area
      */
     fun setTerrainVariance(variance: Int, width: Float, height: Float) {
+        // Update the stored game height for ground level calculations
+        this.gameHeight = height
+
         terrainVarianceState = variance
         terrain = generateTerrain(width, height)
     }
@@ -161,6 +167,9 @@ class TerrainManager {
      * @return A Path object representing the terrain
      */
     private fun regenerateTerrainPath(width: Float, height: Float): Path {
+        // Update the stored game height for ground level calculations
+        this.gameHeight = height
+
         val path = Path()
 
         // Get all x-coordinates in the terrain sorted
@@ -195,22 +204,27 @@ class TerrainManager {
         // Find the closest x-coordinates in our terrain height map
         val terrainXCoords = terrainHeights.keys.toList().sorted()
 
+        // If there's no terrain at all, return the bottom of the screen (y=gameHeight)
+        if (terrainXCoords.isEmpty()) {
+            return gameHeight
+        }
+
         // If position is outside the terrain bounds, return a default value
         if (x < terrainXCoords.first()) {
-            return terrainHeights[terrainXCoords.first()] ?: 0f
+            return terrainHeights[terrainXCoords.first()] ?: gameHeight
         }
 
         if (x > terrainXCoords.last()) {
-            return terrainHeights[terrainXCoords.last()] ?: 0f
+            return terrainHeights[terrainXCoords.last()] ?: gameHeight
         }
 
         // Find the two closest x-coordinates
-        val lowerX = terrainXCoords.filter { it <= x }.maxOrNull() ?: return 0f
-        val upperX = terrainXCoords.filter { it >= x }.minOrNull() ?: return 0f
+        val lowerX = terrainXCoords.filter { it <= x }.maxOrNull() ?: return gameHeight
+        val upperX = terrainXCoords.filter { it >= x }.minOrNull() ?: return gameHeight
 
         // Get the heights at those coordinates
-        val lowerY = terrainHeights[lowerX] ?: return 0f
-        val upperY = terrainHeights[upperX] ?: return 0f
+        val lowerY = terrainHeights[lowerX] ?: return gameHeight
+        val upperY = terrainHeights[upperX] ?: return gameHeight
 
         // Interpolate to find the terrain height at the exact x-coordinate
         return if (upperX == lowerX) {
@@ -219,6 +233,9 @@ class TerrainManager {
             lowerY + (upperY - lowerY) * (x - lowerX) / (upperX - lowerX)
         }
     }
+
+    // Store game height for ground level calculations
+    private var gameHeight: Float = 1200f
 
     /**
      * Gets the terrain height at a specific x-coordinate.

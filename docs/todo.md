@@ -23,10 +23,10 @@
   - When round ends: Each player gets ((num players - position) * 1000). So the lower you end the less money you get. Last one gets nothing with this scheme.
 
 - ✅Shop should show between each round
-- tank should stand on bottom if no terrain is present
+- ✅lighting
+- ✅tank should stand on bottom if no terrain is present
 - sounds
 
-- lighting
 - meteor shower
 
 - Teams
