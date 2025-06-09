@@ -194,6 +194,8 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
             val healthPercentage = player.health / 100f
             val healthBarWidth = maxHealthBarWidth * healthPercentage
 
+            println("[DEBUG_LOG] GameRenderer: Drawing health bar for player ${player.name}, health=${player.health}, percentage=$healthPercentage, width=$healthBarWidth")
+
             // Draw health background (red)
             drawRect(
                 color = Color.Red,

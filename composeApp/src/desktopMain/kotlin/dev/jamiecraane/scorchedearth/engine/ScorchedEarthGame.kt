@@ -212,13 +212,28 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Check for lightning strikes hitting players
         if (weatherTypeState == WeatherType.LIGHTNING && weatherManager.lightning != null) {
+            println("[DEBUG_LOG] Checking for lightning hits, weatherType=$weatherTypeState, lightning=${weatherManager.lightning}")
             // Check each player
             players.forEachIndexed { index, player ->
                 // Only check players that are still alive
-                if (player.health > 0 && weatherManager.isPlayerHitByLightning(player.position)) {
-                    // Apply lightning damage (30 damage)
-                    playerManager.applyDamageToPlayer(index, weatherManager.lightning!!.damage)
+                println("[DEBUG_LOG] Checking player $index (${player.name}): health=${player.health}, position=${player.position}")
+                if (player.health > 0) {
+                    val isHit = weatherManager.isPlayerHitByLightning(player.position, index)
+                    println("[DEBUG_LOG] Player $index (${player.name}) is hit by lightning: $isHit")
+                    if (isHit) {
+                        // Apply lightning damage (10 damage)
+                        println("[DEBUG_LOG] Applying ${weatherManager.lightning!!.damage} damage to player $index (${player.name})")
+                        val beforeHealth = player.health
+                        playerManager.applyDamageToPlayer(index, weatherManager.lightning!!.damage)
+                        val afterHealth = players[index].health
+                        println("[DEBUG_LOG] Player $index (${player.name}) health changed from $beforeHealth to $afterHealth")
+                        println("[DEBUG_LOG] Players list after damage: ${players.map { "${it.name}(${it.health})" }}")
+                    }
                 }
+            }
+        } else {
+            if (weatherManager.lightning != null) {
+                println("[DEBUG_LOG] Lightning exists but weatherType is not LIGHTNING: weatherType=$weatherTypeState")
             }
         }
     }

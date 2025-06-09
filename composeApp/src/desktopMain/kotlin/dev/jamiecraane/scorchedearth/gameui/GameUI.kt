@@ -24,6 +24,7 @@ import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.model.Player
 import dev.jamiecraane.scorchedearth.model.PlayerType
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
+import dev.jamiecraane.scorchedearth.weather.WeatherType
 import kotlinx.coroutines.delay
 
 // No need to import components from the same package
@@ -117,6 +118,9 @@ fun GameUI(
     ) {
         // Game canvas where all rendering happens - placed first so it's at the bottom layer
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // Debug log to track Canvas recomposition
+            println("[DEBUG_LOG] GameUI: Canvas recomposing, players=${game.players.map { "${it.name}(${it.health})" }}")
+
             // Only update dimensions when canvas size actually changes
             if (canvasSize != size) {
                 canvasSize = size
@@ -141,8 +145,10 @@ fun GameUI(
             },
             onLightningStrikeClick = {
                 println("[DEBUG_LOG] GameUI: onLightningStrikeClick callback called")
+                // Set the game's weather type to LIGHTNING before triggering the lightning strike
+                game.setWeatherType(WeatherType.LIGHTNING)
                 val lightning = game.weather.triggerLightningStrike()
-                println("[DEBUG_LOG] GameUI: Lightning created: ${lightning != null}, weatherType=${game.weather.weatherTypeState}")
+                println("[DEBUG_LOG] GameUI: Lightning created: ${lightning != null}, weatherType=${game.weather.weatherTypeState}, gameWeatherType=${game.weatherTypeState}")
             },
             modifier = Modifier.align(Alignment.TopCenter)
         )

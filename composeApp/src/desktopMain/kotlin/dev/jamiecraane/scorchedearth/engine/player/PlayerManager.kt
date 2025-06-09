@@ -212,6 +212,7 @@ class PlayerManager {
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: playerIndex=$playerIndex, damage=$damage")
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: players before=${players.map { "${it.name}(${it.health})" }}")
 
+        // Create a new list to ensure state change is detected
         val updatedPlayers = players.toMutableList()
 
         // Check if the playerIndex is valid
@@ -289,9 +290,10 @@ class PlayerManager {
         updatedPlayers[playerIndex] = updatedPlayer
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: New health for ${player.name}=${newHealth}")
 
-        // Update the players list
-        players = updatedPlayers
+        // Force a state update by creating a new list
+        players = updatedPlayers.toList()
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: players after=${players.map { "${it.name}(${it.health})" }}")
+        println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Force recomposition with new list instance")
 
         // Count how many players are still alive
         val alivePlayers = players.count { it.health > 0 }
@@ -302,9 +304,16 @@ class PlayerManager {
 
         // If only one player is left alive, mark them as the last one (winner)
         if (gameOver && alivePlayers == 1) {
-            val winner = players.first { it.health > 0 }
-            winner.eliminationOrder = players.size - 1 // Highest elimination order = winner
-            println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Winner is ${winner.name}")
+            // Create a new list again to ensure state change is detected
+            val finalPlayers = players.toMutableList()
+            val winnerIndex = finalPlayers.indexOfFirst { it.health > 0 }
+            if (winnerIndex >= 0) {
+                val winner = finalPlayers[winnerIndex]
+                val updatedWinner = winner.copy(eliminationOrder = players.size - 1) // Highest elimination order = winner
+                finalPlayers[winnerIndex] = updatedWinner
+                players = finalPlayers.toList() // Force another state update
+                println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Winner is ${updatedWinner.name}")
+            }
         }
 
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: gameOver=$gameOver")

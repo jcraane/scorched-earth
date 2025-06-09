@@ -119,11 +119,13 @@ class WeatherManager {
         // Update existing lightning
         if (lightning != null) {
             val updatedLightning = lightning!!.copy(
-                timeRemaining = lightning!!.timeRemaining - deltaTime
+                timeRemaining = lightning!!.timeRemaining - deltaTime,
+                hitPlayers = lightning!!.hitPlayers // Preserve the set of hit players
             )
 
             // Remove lightning if its time is up
             if (updatedLightning.timeRemaining <= 0) {
+                println("[DEBUG_LOG] Lightning expired, removing it. Hit ${updatedLightning.hitPlayers.size} players.")
                 lightning = null
             } else {
                 lightning = updatedLightning
@@ -149,7 +151,7 @@ class WeatherManager {
         println("[DEBUG_LOG] generateLightningStrike called, gameWidth=$gameWidth, gameHeight=$gameHeight")
 
         val strikeX = Random.nextFloat() * gameWidth
-        val spread = 30f + Random.nextFloat() * 50f // Random spread between 30-80px
+        val spread = (30f + Random.nextFloat() * 50f) * 2f // Random spread between 60-160px (doubled from original 30-80px)
 
         val newLightning = Lightning(
             strikePosition = Offset(strikeX, 0f), // Lightning strikes from the top
@@ -157,6 +159,7 @@ class WeatherManager {
         )
 
         println("[DEBUG_LOG] Created lightning at x=$strikeX with spread=$spread")
+        println("[DEBUG_LOG] New lightning has empty hit players set: ${newLightning.hitPlayers.isEmpty()}")
 
         lightning = newLightning
         println("[DEBUG_LOG] Lightning property set, current weatherType=$weatherTypeState")
@@ -178,23 +181,51 @@ class WeatherManager {
         }
 
         val result = generateLightningStrike()
-        println("[DEBUG_LOG] Lightning strike triggered, lightning=${result != null}")
+        println("[DEBUG_LOG] Lightning strike triggered, lightning=${result != null}, hitPlayers=${result.hitPlayers.size}")
         return result
     }
 
     /**
      * Checks if a player is hit by the current lightning strike.
      * @param playerPosition The position of the player
-     * @return True if the player is hit by lightning
+     * @param playerIndex The index of the player in the players list
+     * @return True if the player is hit by lightning and hasn't been hit before
      */
-    fun isPlayerHitByLightning(playerPosition: Offset): Boolean {
+    fun isPlayerHitByLightning(playerPosition: Offset, playerIndex: Int): Boolean {
         val currentLightning = lightning ?: return false
 
-        // Check if player's x position is within the lightning strike area
-        val lightningLeft = currentLightning.strikePosition.x - currentLightning.spread / 2
-        val lightningRight = currentLightning.strikePosition.x + currentLightning.spread / 2
+        // Check if this player has already been hit by this lightning strike
+        if (currentLightning.hitPlayers.contains(playerIndex)) {
+            println("[DEBUG_LOG] isPlayerHitByLightning: Player $playerIndex already hit by this lightning, skipping")
+            return false
+        }
 
-        return playerPosition.x in lightningLeft..lightningRight
+        // Calculate the ground position where lightning hits
+        val groundY = gameHeight * 0.7f // Approximate ground level, same as in WeatherRenderer
+        val strikeGroundPosition = Offset(currentLightning.strikePosition.x, groundY)
+
+        // Calculate distance from player to lightning strike point on ground
+        val distanceToStrike = kotlin.math.sqrt(
+            (playerPosition.x - strikeGroundPosition.x) * (playerPosition.x - strikeGroundPosition.x) +
+            (playerPosition.y - strikeGroundPosition.y) * (playerPosition.y - strikeGroundPosition.y)
+        )
+
+        // The blast radius is half of the lightning's spread
+        val blastRadius = currentLightning.spread / 2
+
+        println("[DEBUG_LOG] isPlayerHitByLightning: playerPosition=$playerPosition, strikeGroundPosition=$strikeGroundPosition")
+        println("[DEBUG_LOG] isPlayerHitByLightning: distanceToStrike=$distanceToStrike, blastRadius=$blastRadius")
+
+        val isHit = distanceToStrike <= blastRadius
+        println("[DEBUG_LOG] isPlayerHitByLightning result: $isHit")
+
+        // If the player is hit, mark them as hit in the lightning's hitPlayers set
+        if (isHit) {
+            currentLightning.hitPlayers.add(playerIndex)
+            println("[DEBUG_LOG] isPlayerHitByLightning: Marked player $playerIndex as hit by this lightning")
+        }
+
+        return isHit
     }
 
     /**
@@ -286,5 +317,6 @@ data class Lightning(
     val strikePosition: Offset, // Position where lightning hits the ground
     val spread: Float, // Spread of the lightning on the ground (30-80px)
     val timeRemaining: Float = 0.5f, // Time in seconds the lightning will be visible
-    val damage: Int = 30 // Damage caused by lightning
+    val damage: Int = 30, // Damage caused by lightning (reduced from 15)
+    val hitPlayers: MutableSet<Int> = mutableSetOf() // Tracks which players have already been hit by this lightning
 )
