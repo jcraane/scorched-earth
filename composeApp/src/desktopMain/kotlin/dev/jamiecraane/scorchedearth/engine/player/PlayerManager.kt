@@ -251,13 +251,39 @@ class PlayerManager {
 
         println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Applied $remainingDamage damage to player health")
 
+        // Award money to the current player for dealing damage (damage * 20)
+        if (remainingDamage > 0) {
+            val currentPlayer = getCurrentPlayer()
+            val moneyForDamage = remainingDamage * 20
+
+            // Only award money if the player is damaging someone else, not themselves
+            if (currentPlayerIndex != playerIndex) {
+                val updatedCurrentPlayer = players[currentPlayerIndex].copy(
+                    money = players[currentPlayerIndex].money + moneyForDamage
+                )
+                updatedPlayers[currentPlayerIndex] = updatedCurrentPlayer
+                println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Player ${currentPlayer.name} earned $moneyForDamage money for dealing $remainingDamage damage")
+            }
+        }
+
         // Check if player was just eliminated
         val wasJustEliminated = player.health > 0 && newHealth == 0
 
-        // If player was just eliminated, set elimination order
+        // If player was just eliminated, set elimination order and award kill money
         if (wasJustEliminated) {
             updatedPlayer.eliminationOrder = eliminationCount++
             println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Player ${player.name} eliminated, order=${updatedPlayer.eliminationOrder}")
+
+            // Award money to the current player for the kill (2500)
+            if (currentPlayerIndex != playerIndex) {  // Don't award money for self-elimination
+                val currentPlayer = getCurrentPlayer()
+                val moneyForKill = 2500
+                val updatedCurrentPlayer = players[currentPlayerIndex].copy(
+                    money = players[currentPlayerIndex].money + moneyForKill
+                )
+                updatedPlayers[currentPlayerIndex] = updatedCurrentPlayer
+                println("[DEBUG_LOG] PlayerManager.applyDamageToPlayer: Player ${currentPlayer.name} earned $moneyForKill money for eliminating ${player.name}")
+            }
         }
 
         updatedPlayers[playerIndex] = updatedPlayer

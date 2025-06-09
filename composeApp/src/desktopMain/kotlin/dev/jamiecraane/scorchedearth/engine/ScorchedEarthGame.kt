@@ -280,8 +280,67 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
     /**
      * Prepares to transition to the next round by showing round statistics.
      * This is called when a round ends (only one player left alive).
+     * Awards money to players based on their position at the end of the round.
      */
     fun prepareNextRound() {
+        // Award money based on player position
+        val alivePlayers = players.filter { it.health > 0 }
+        val eliminatedPlayers = players.filter { it.health == 0 }.sortedBy { it.eliminationOrder }
+
+        println("[DEBUG_LOG] prepareNextRound: alivePlayers=${alivePlayers.map { "${it.name}(${it.health})" }}")
+        println("[DEBUG_LOG] prepareNextRound: eliminatedPlayers=${eliminatedPlayers.map { "${it.name}(${it.health}, order=${it.eliminationOrder})" }}")
+
+        // Update player money based on position
+        val updatedPlayers = players.toMutableList()
+
+        // First, handle eliminated players
+        eliminatedPlayers.forEachIndexed { index, player ->
+            // Calculate money: (num players - position) * 1000
+            // Position is 0-based, so the first eliminated player has position 0
+            val moneyForPosition = (players.size - index) * 1000
+
+            println("[DEBUG_LOG] prepareNextRound: Eliminated player ${player.name} at position $index, money calculation: (${players.size} - $index) * 1000 = $moneyForPosition")
+
+            // Only award money if it's positive
+            if (moneyForPosition > 0) {
+                // Find the player in the original list and update their money
+                val playerIndex = players.indexOf(player)
+                if (playerIndex >= 0) {
+                    val updatedPlayer = updatedPlayers[playerIndex].copy(
+                        money = updatedPlayers[playerIndex].money + moneyForPosition
+                    )
+                    updatedPlayers[playerIndex] = updatedPlayer
+                    println("[DEBUG_LOG] Player ${player.name} earned $moneyForPosition money for position ${index + 1}")
+                }
+            }
+        }
+
+        // Then, handle alive players (winners)
+        // There should be only one alive player at this point
+        if (alivePlayers.isNotEmpty()) {
+            // The winner gets (num players - position) * 1000 money
+            // where position is the number of eliminated players
+            val winner = alivePlayers.first()
+            val winnerPosition = eliminatedPlayers.size
+            val moneyForWinner = (players.size - winnerPosition) * 1000
+
+            println("[DEBUG_LOG] prepareNextRound: Winner ${winner.name} at position $winnerPosition, money calculation: (${players.size} - $winnerPosition) * 1000 = $moneyForWinner")
+
+            if (moneyForWinner > 0) {
+                val winnerIndex = players.indexOf(winner)
+                if (winnerIndex >= 0) {
+                    val updatedWinner = updatedPlayers[winnerIndex].copy(
+                        money = updatedPlayers[winnerIndex].money + moneyForWinner
+                    )
+                    updatedPlayers[winnerIndex] = updatedWinner
+                    println("[DEBUG_LOG] Player ${winner.name} earned $moneyForWinner money for winning")
+                }
+            }
+        }
+
+        // Update the players list
+        players = updatedPlayers
+
         // Change game state to show statistics
         gameState = GameState.ROUND_STATISTICS
     }

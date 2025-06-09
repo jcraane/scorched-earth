@@ -14,8 +14,8 @@
 - ✅Draw sun in sunset and sunrise skystyles
 - ✅fall damage
 - ✅shield
+- ✅Shop before each round, inventory not be able to buy stuff
 
-- Shop before each round, inventory not be able to buy stuff
 - money earn scheme
   - player kills other player -> 2500
   - player deals damage: damage * 20
