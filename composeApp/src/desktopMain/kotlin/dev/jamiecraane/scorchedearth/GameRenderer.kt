@@ -80,12 +80,12 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
         // Draw terrain
         drawPath(
             path = game.terrain,
-            color = Color(0xFF8B4513), // Brown color for terrain
+            color = game.terrainStyle.color, // Use terrain style color
             style = Stroke(width = 2f)
         )
         drawPath(
             path = game.terrain,
-            color = Color(0xFF8B4513).copy(alpha = 1.0f) // Fully opaque fill
+            color = game.terrainStyle.color.copy(alpha = 1.0f) // Fully opaque fill
         )
 
         // Draw players (tanks) - only render players that are alive (health > 0)

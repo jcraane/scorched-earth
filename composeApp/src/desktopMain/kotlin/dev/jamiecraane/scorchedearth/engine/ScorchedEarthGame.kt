@@ -11,6 +11,7 @@ import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.ShieldType
 import dev.jamiecraane.scorchedearth.shield.Shield
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
+import dev.jamiecraane.scorchedearth.terrain.TerrainStyle
 import dev.jamiecraane.scorchedearth.weather.WeatherManager
 import dev.jamiecraane.scorchedearth.weather.WeatherType
 import kotlin.random.Random
@@ -409,6 +410,10 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             terrainManager.setTerrainVariance(25 + Random.nextInt(50), gameWidth, gameHeight)
             terrainManager.generateTerrain(gameWidth, gameHeight)
 
+            // Pick a random terrain style
+            val terrainStyles = TerrainStyle.values()
+            setTerrainStyle(terrainStyles[Random.nextInt(terrainStyles.size)])
+
             // Store player data before regenerating players
             val playerData = playerManager.players.map { player ->
                 PlayerData(
@@ -511,6 +516,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      * Gets the weather manager.
      */
     val weather get() = weatherManager
+
+    /**
+     * Gets the current terrain style.
+     */
+    val terrainStyle get() = terrainManager.terrainStyle
+
+    /**
+     * Sets the terrain style.
+     */
+    fun setTerrainStyle(style: TerrainStyle) {
+        terrainManager.terrainStyle = style
+    }
 
     /**
      * Advances to the next player, skipping dead players.

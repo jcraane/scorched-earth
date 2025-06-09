@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import dev.jamiecraane.scorchedearth.terrain.TerrainStyle
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -20,6 +21,9 @@ class TerrainManager {
 
     // Terrain data
     var terrain by mutableStateOf<Path>(Path())
+
+    // Current terrain style
+    var terrainStyle by mutableStateOf(TerrainStyle.SAND)
 
     /**
      * Generates procedural terrain using an algorithm selected based on variance level.

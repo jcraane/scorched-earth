@@ -24,16 +24,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
+import dev.jamiecraane.scorchedearth.terrain.TerrainStyleSelector
 import dev.jamiecraane.scorchedearth.weather.WeatherType
 import kotlin.math.sin
 
 /**
  * Intro screen shown before the game starts.
  *
- * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, terrain variance, number of rounds, and weather type
+ * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, terrain style, terrain variance, number of rounds, and weather type
  */
 @Composable
-fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> Unit) {
+fun IntroScreen(onStartGame: (Int, SkyStyleSelector, TerrainStyleSelector, Int, Int, WeatherType) -> Unit) {
     // State for the number of players slider
     var numberOfPlayers by remember { mutableStateOf(2f) }
 
@@ -45,6 +46,9 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
 
     // State for the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
+
+    // State for the selected terrain style
+    var selectedTerrainStyle by remember { mutableStateOf(TerrainStyleSelector.getDefault()) }
 
     // State for rain enabled/disabled
     var rainEnabled by remember { mutableStateOf(false) }
@@ -111,7 +115,7 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
                 // Draw the terrain
                 drawPath(
                     path = path,
-                    color = Color(0xFF8B4513) // Brown color
+                    color = selectedTerrainStyle.toTerrainStyle().color // Use selected terrain style color
                 )
 
                 // Draw two tanks
@@ -239,6 +243,42 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Terrain style selection
+            Text(
+                text = "Terrain Style:",
+                color = Color.White,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Radio buttons for terrain style selection
+            Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                TerrainStyleSelector.values().forEach { terrainStyle ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (terrainStyle == selectedTerrainStyle),
+                                onClick = { selectedTerrainStyle = terrainStyle }
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (terrainStyle == selectedTerrainStyle),
+                            onClick = { selectedTerrainStyle = terrainStyle }
+                        )
+                        Text(
+                            text = terrainStyle.displayName,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Rain checkbox
             Row(
                 modifier = Modifier
@@ -298,7 +338,7 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
                         lightningEnabled -> WeatherType.LIGHTNING
                         else -> WeatherType.NONE
                     }
-                    onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt(), numberOfRounds.toInt(), weatherType)
+                    onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, selectedTerrainStyle, terrainVariance.toInt(), numberOfRounds.toInt(), weatherType)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

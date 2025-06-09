@@ -10,6 +10,7 @@ import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.gameui.GameUI
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
+import dev.jamiecraane.scorchedearth.terrain.TerrainStyleSelector
 import dev.jamiecraane.scorchedearth.weather.WeatherType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -38,6 +39,9 @@ fun App() {
     // State to track the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
 
+    // State to track the selected terrain style
+    var selectedTerrainStyle by remember { mutableStateOf(TerrainStyleSelector.getDefault()) }
+
     // State to track the terrain variance
     var terrainVariance by remember { mutableStateOf(25) }
 
@@ -53,9 +57,10 @@ fun App() {
     when (currentScreen) {
         Screen.INTRO -> {
             IntroScreen(
-                onStartGame = { players, skyStyle, variance, rounds, weather ->
+                onStartGame = { players, skyStyle, terrainStyle, variance, rounds, weather ->
                     numberOfPlayers = players
                     selectedSkyStyle = skyStyle
+                    selectedTerrainStyle = terrainStyle
                     terrainVariance = variance
                     numberOfRounds = rounds
                     weatherType = weather
@@ -111,13 +116,16 @@ fun App() {
 
         Screen.GAME -> {
             // Game is started, create the game instance with the players from inventory selection
-            val game = remember(players, selectedSkyStyle, terrainVariance, numberOfRounds) {
+            val game = remember(players, selectedSkyStyle, selectedTerrainStyle, terrainVariance, numberOfRounds) {
                 ScorchedEarthGame(players.size, numberOfRounds).apply {
                     // Set the players from inventory selection
                     this.players = players.toMutableList()
 
                     // Set the sky style
                     skyStyle = selectedSkyStyle.toSkyStyle()
+
+                    // Set the terrain style
+                    setTerrainStyle(selectedTerrainStyle.toTerrainStyle())
 
                     // Set the weather type
                     setWeatherType(weatherType)
