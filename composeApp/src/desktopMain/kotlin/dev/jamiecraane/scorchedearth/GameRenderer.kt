@@ -74,6 +74,7 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
         }
 
         // Draw weather effects
+        println("[DEBUG_LOG] GameRenderer.drawGame: Drawing weather effects, weatherType=${game.weather.weatherTypeState}, hasLightning=${game.weather.lightning != null}")
         WeatherRenderer.render(this, game.weather, game.wind)
 
         // Draw terrain

@@ -16,6 +16,11 @@ class WeatherManager {
     // Rain particles
     var rainDrops by mutableStateOf<List<RainDrop>>(listOf())
 
+    // Lightning
+    var lightning by mutableStateOf<Lightning?>(null)
+    var lightningTimer = 0f
+    private val lightningFrequency = 10f // Average seconds between lightning strikes
+
     // Game dimensions
     private var gameWidth = 0f
     private var gameHeight = 0f
@@ -49,9 +54,16 @@ class WeatherManager {
         // Initialize rain drops if weather type is RAIN
         if (type == WeatherType.RAIN && gameWidth > 0 && gameHeight > 0) {
             generateRainDrops()
-        } else {
-            // Clear rain drops if weather type is not RAIN
+        } else if (type != WeatherType.LIGHTNING) {
+            // Clear rain drops if weather type is not RAIN or LIGHTNING
             rainDrops = listOf()
+        }
+
+        // Reset lightning timer when changing weather type
+        if (type == WeatherType.LIGHTNING) {
+            lightningTimer = Random.nextFloat() * lightningFrequency
+        } else {
+            lightning = null
         }
     }
 
@@ -93,6 +105,96 @@ class WeatherManager {
         if (weatherTypeState == WeatherType.RAIN) {
             updateRain(deltaTime, wind)
         }
+
+        if (weatherTypeState == WeatherType.LIGHTNING) {
+            updateLightning(deltaTime)
+        }
+    }
+
+    /**
+     * Updates lightning effects.
+     * @param deltaTime Time elapsed since the last update in seconds
+     */
+    private fun updateLightning(deltaTime: Float) {
+        // Update existing lightning
+        if (lightning != null) {
+            val updatedLightning = lightning!!.copy(
+                timeRemaining = lightning!!.timeRemaining - deltaTime
+            )
+
+            // Remove lightning if its time is up
+            if (updatedLightning.timeRemaining <= 0) {
+                lightning = null
+            } else {
+                lightning = updatedLightning
+            }
+        } else {
+            // No active lightning, update timer for next strike
+            lightningTimer -= deltaTime
+
+            // Generate new lightning strike when timer expires
+            if (lightningTimer <= 0) {
+                generateLightningStrike()
+                // Reset timer with some randomness
+                lightningTimer = lightningFrequency * (0.8f + Random.nextFloat() * 0.4f)
+            }
+        }
+    }
+
+    /**
+     * Generates a lightning strike at a random position.
+     * @return The generated Lightning object
+     */
+    private fun generateLightningStrike(): Lightning {
+        println("[DEBUG_LOG] generateLightningStrike called, gameWidth=$gameWidth, gameHeight=$gameHeight")
+
+        val strikeX = Random.nextFloat() * gameWidth
+        val spread = 30f + Random.nextFloat() * 50f // Random spread between 30-80px
+
+        val newLightning = Lightning(
+            strikePosition = Offset(strikeX, 0f), // Lightning strikes from the top
+            spread = spread
+        )
+
+        println("[DEBUG_LOG] Created lightning at x=$strikeX with spread=$spread")
+
+        lightning = newLightning
+        println("[DEBUG_LOG] Lightning property set, current weatherType=$weatherTypeState")
+
+        return newLightning
+    }
+
+    /**
+     * Manually triggers a lightning strike.
+     * @return The generated Lightning object
+     */
+    fun triggerLightningStrike(): Lightning {
+        println("[DEBUG_LOG] triggerLightningStrike called, current weatherType=$weatherTypeState")
+
+        // Ensure weather type is set to LIGHTNING
+        if (weatherTypeState != WeatherType.LIGHTNING) {
+            println("[DEBUG_LOG] Setting weather type to LIGHTNING")
+            weatherTypeState = WeatherType.LIGHTNING
+        }
+
+        val result = generateLightningStrike()
+        println("[DEBUG_LOG] Lightning strike triggered, lightning=${result != null}")
+        return result
+    }
+
+    /**
+     * Checks if a player is hit by the current lightning strike.
+     * @param playerPosition The position of the player
+     * @return True if the player is hit by lightning
+     */
+    fun isPlayerHitByLightning(playerPosition: Offset): Boolean {
+        val currentLightning = lightning ?: return false
+
+        // Check if player's x position is within the lightning strike area
+        val lightningLeft = currentLightning.strikePosition.x - currentLightning.spread / 2
+        val lightningRight = currentLightning.strikePosition.x + currentLightning.spread / 2
+
+        return playerPosition.x in lightningLeft..lightningRight
     }
 
     /**
@@ -175,4 +277,14 @@ data class RainDrop(
     val tailLength: Float = length * 0.5f, // Tail length as a proportion of the main drop length
     val speed: Float,
     val angle: Float = 0f // Angle in radians representing the direction of fall
+)
+
+/**
+ * Data class representing a lightning strike.
+ */
+data class Lightning(
+    val strikePosition: Offset, // Position where lightning hits the ground
+    val spread: Float, // Spread of the lightning on the ground (30-80px)
+    val timeRemaining: Float = 0.5f, // Time in seconds the lightning will be visible
+    val damage: Int = 30 // Damage caused by lightning
 )

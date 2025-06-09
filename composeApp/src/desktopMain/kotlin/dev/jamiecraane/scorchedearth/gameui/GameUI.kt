@@ -139,6 +139,11 @@ fun GameUI(
             transitionToNextRoundClick = {
                 game.prepareNextRound()
             },
+            onLightningStrikeClick = {
+                println("[DEBUG_LOG] GameUI: onLightningStrikeClick callback called")
+                val lightning = game.weather.triggerLightningStrike()
+                println("[DEBUG_LOG] GameUI: Lightning created: ${lightning != null}, weatherType=${game.weather.weatherTypeState}")
+            },
             modifier = Modifier.align(Alignment.TopCenter)
         )
 

@@ -209,6 +209,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Update weather effects
         weatherManager.update(deltaTime, wind)
+
+        // Check for lightning strikes hitting players
+        if (weatherTypeState == WeatherType.LIGHTNING && weatherManager.lightning != null) {
+            // Check each player
+            players.forEachIndexed { index, player ->
+                // Only check players that are still alive
+                if (player.health > 0 && weatherManager.isPlayerHitByLightning(player.position)) {
+                    // Apply lightning damage (30 damage)
+                    playerManager.applyDamageToPlayer(index, weatherManager.lightning!!.damage)
+                }
+            }
+        }
     }
 
     /**

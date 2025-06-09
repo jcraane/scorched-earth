@@ -49,6 +49,9 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
     // State for rain enabled/disabled
     var rainEnabled by remember { mutableStateOf(false) }
 
+    // State for lightning enabled/disabled
+    var lightningEnabled by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -245,10 +248,40 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
             ) {
                 Checkbox(
                     checked = rainEnabled,
-                    onCheckedChange = { rainEnabled = it }
+                    onCheckedChange = {
+                        rainEnabled = it
+                        // Disable lightning if rain is enabled
+                        if (it) {
+                            lightningEnabled = false
+                        }
+                    }
                 )
                 Text(
                     text = "Enable Rain",
+                    color = Color.White,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            // Lightning checkbox
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = lightningEnabled,
+                    onCheckedChange = {
+                        lightningEnabled = it
+                        // Disable rain if lightning is enabled
+                        if (it) {
+                            rainEnabled = false
+                        }
+                    }
+                )
+                Text(
+                    text = "Enable Lightning",
                     color = Color.White,
                     modifier = Modifier.padding(start = 8.dp)
                 )
@@ -259,8 +292,12 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> U
             // Start button
             Button(
                 onClick = {
-                    // Determine weather type based on checkbox
-                    val weatherType = if (rainEnabled) WeatherType.RAIN else WeatherType.NONE
+                    // Determine weather type based on checkboxes
+                    val weatherType = when {
+                        rainEnabled -> WeatherType.RAIN
+                        lightningEnabled -> WeatherType.LIGHTNING
+                        else -> WeatherType.NONE
+                    }
                     onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt(), numberOfRounds.toInt(), weatherType)
                 },
                 modifier = Modifier

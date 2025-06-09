@@ -5,7 +5,8 @@ package dev.jamiecraane.scorchedearth.weather
  */
 enum class WeatherType(val displayName: String) {
     NONE("None"),
-    RAIN("Rain");
+    RAIN("Rain"),
+    LIGHTNING("Lightning");
 
     companion object {
         /**

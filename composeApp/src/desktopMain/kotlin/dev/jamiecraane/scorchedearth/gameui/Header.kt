@@ -19,6 +19,7 @@ fun Header(
     currentRound: Int,
     onBackButtonClick: () -> Unit,
     transitionToNextRoundClick: () -> Unit,
+    onLightningStrikeClick: () -> Unit = {},
     modifier: Modifier = Modifier.Companion,
 ) {
     Row(
@@ -41,18 +42,29 @@ fun Header(
             fontWeight = FontWeight.Bold,
         )
 
-        DebugButtons(transitionToNextRoundClick)
+        DebugButtons(transitionToNextRoundClick, onLightningStrikeClick)
     }
 }
 
 @Composable
-private fun DebugButtons(transitionToNextRoundClick: () -> Unit) {
+private fun DebugButtons(transitionToNextRoundClick: () -> Unit, onLightningStrikeClick: () -> Unit) {
     Row {
         Button(
             onClick = transitionToNextRoundClick,
             modifier = Modifier.Companion.padding(4.dp)
         ) {
             Text("Trigger next round")
+        }
+
+        // Lightning strike button
+        Button(
+            onClick = {
+                println("[DEBUG_LOG] Lightning Strike button clicked")
+                onLightningStrikeClick()
+            },
+            modifier = Modifier.Companion.padding(4.dp)
+        ) {
+            Text("Lightning Strike")
         }
     }
 }
