@@ -85,6 +85,14 @@ fun InventoryPopup(
                     )
                 }
 
+                // Display player's name and money
+                Text(
+                    text = "Player: ${game.players[game.currentPlayerIndex].name}",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
                 // Display player's money
                 Text(
                     text = "Money: $${game.players[game.currentPlayerIndex].money}",
