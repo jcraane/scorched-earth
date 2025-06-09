@@ -10,6 +10,7 @@ import dev.jamiecraane.scorchedearth.engine.CPUPlayerController
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.gameui.GameUI
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
+import dev.jamiecraane.scorchedearth.weather.WeatherType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -43,17 +44,21 @@ fun App() {
     // State to track the number of rounds
     var numberOfRounds by remember { mutableStateOf(1) }
 
+    // State to track the weather type
+    var weatherType by remember { mutableStateOf(WeatherType.NONE) }
+
     // Track canvas size to detect changes
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     when (currentScreen) {
         Screen.INTRO -> {
             IntroScreen(
-                onStartGame = { players, skyStyle, variance, rounds ->
+                onStartGame = { players, skyStyle, variance, rounds, weather ->
                     numberOfPlayers = players
                     selectedSkyStyle = skyStyle
                     terrainVariance = variance
                     numberOfRounds = rounds
+                    weatherType = weather
                     currentScreen = Screen.PLAYER_NAMES
                 }
             )
@@ -113,6 +118,9 @@ fun App() {
 
                     // Set the sky style
                     skyStyle = selectedSkyStyle.toSkyStyle()
+
+                    // Set the weather type
+                    setWeatherType(weatherType)
 
                     // Set the terrain variance and regenerate terrain
                     setTerrainVariance(terrainVariance)

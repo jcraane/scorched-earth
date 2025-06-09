@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -23,15 +24,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.jamiecraane.scorchedearth.sky.SkyStyleSelector
+import dev.jamiecraane.scorchedearth.weather.WeatherType
 import kotlin.math.sin
 
 /**
  * Intro screen shown before the game starts.
  *
- * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, terrain variance, and number of rounds
+ * @param onStartGame Callback when the start button is clicked, with the selected number of players, sky style, terrain variance, number of rounds, and weather type
  */
 @Composable
-fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int) -> Unit) {
+fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int, WeatherType) -> Unit) {
     // State for the number of players slider
     var numberOfPlayers by remember { mutableStateOf(2f) }
 
@@ -43,6 +45,9 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int) -> Unit) {
 
     // State for the selected sky style
     var selectedSkyStyle by remember { mutableStateOf(SkyStyleSelector.getDefault()) }
+
+    // State for rain enabled/disabled
+    var rainEnabled by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -231,9 +236,33 @@ fun IntroScreen(onStartGame: (Int, SkyStyleSelector, Int, Int) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Rain checkbox
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rainEnabled,
+                    onCheckedChange = { rainEnabled = it }
+                )
+                Text(
+                    text = "Enable Rain",
+                    color = Color.White,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Start button
             Button(
-                onClick = { onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt(), numberOfRounds.toInt()) },
+                onClick = {
+                    // Determine weather type based on checkbox
+                    val weatherType = if (rainEnabled) WeatherType.RAIN else WeatherType.NONE
+                    onStartGame(numberOfPlayers.toInt(), selectedSkyStyle, terrainVariance.toInt(), numberOfRounds.toInt(), weatherType)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

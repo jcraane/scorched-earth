@@ -11,6 +11,8 @@ import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.ShieldType
 import dev.jamiecraane.scorchedearth.shield.Shield
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
+import dev.jamiecraane.scorchedearth.weather.WeatherManager
+import dev.jamiecraane.scorchedearth.weather.WeatherType
 import kotlin.random.Random
 
 /**
@@ -40,11 +42,15 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
     // Sky style - determines the background gradient
     var skyStyle by mutableStateOf(SkyStyle.AFTERNOON)
 
+    // Weather type - determines the weather effects
+    var weatherTypeState by mutableStateOf(WeatherType.NONE)
+
     // Component managers
     private val terrainManager = TerrainManager()
     private val playerManager = PlayerManager()
     private val explosionManager = ExplosionManager(terrainManager, playerManager)
     private val projectileManager = ProjectileManager(terrainManager, playerManager, explosionManager)
+    private val weatherManager = WeatherManager()
 
     // Flag to indicate if players have been set externally
     private var playersSetExternally = false
@@ -58,6 +64,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
         }
         projectileManager.setGameDimensions(gameWidth, gameHeight)
         projectileManager.generateWind()
+
+        // Initialize weather manager
+        weatherManager.setGameDimensions(gameWidth, gameHeight)
     }
 
     /**
@@ -110,6 +119,18 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Update game dimensions in projectile manager
         projectileManager.setGameDimensions(width, height)
+
+        // Update game dimensions in weather manager
+        weatherManager.setGameDimensions(width, height)
+    }
+
+    /**
+     * Sets the weather type.
+     * @param type The weather type to set
+     */
+    fun setWeatherType(type: WeatherType) {
+        weatherTypeState = type
+        weatherManager.setWeatherType(type)
     }
 
     /**
@@ -185,6 +206,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
 
         // Update falling players animation
         playerManager.updateFallingPlayers(deltaTime)
+
+        // Update weather effects
+        weatherManager.update(deltaTime, wind)
     }
 
     /**
@@ -455,4 +479,9 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      * Gets the current wind.
      */
     val wind get() = projectileManager.wind
+
+    /**
+     * Gets the weather manager.
+     */
+    val weather get() = weatherManager
 }

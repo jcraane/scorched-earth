@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import dev.jamiecraane.scorchedearth.engine.ScorchedEarthGame
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
 import dev.jamiecraane.scorchedearth.sky.Star
+import dev.jamiecraane.scorchedearth.weather.WeatherRenderer
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -71,6 +72,9 @@ fun DrawScope.drawGame(game: ScorchedEarthGame) {
                 )
             }
         }
+
+        // Draw weather effects
+        WeatherRenderer.render(this, game.weather, game.wind)
 
         // Draw terrain
         drawPath(
