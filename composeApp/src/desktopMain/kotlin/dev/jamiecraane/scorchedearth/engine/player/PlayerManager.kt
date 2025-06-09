@@ -254,7 +254,7 @@ class PlayerManager {
         // Award money to the current player for dealing damage (damage * 20)
         if (remainingDamage > 0) {
             val currentPlayer = getCurrentPlayer()
-            val moneyForDamage = remainingDamage * 20
+            val moneyForDamage = damage * 10
 
             // Only award money if the player is damaging someone else, not themselves
             if (currentPlayerIndex != playerIndex) {

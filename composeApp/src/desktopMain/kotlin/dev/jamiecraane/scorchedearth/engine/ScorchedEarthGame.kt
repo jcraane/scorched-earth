@@ -11,6 +11,7 @@ import dev.jamiecraane.scorchedearth.inventory.ProjectileType
 import dev.jamiecraane.scorchedearth.inventory.ShieldType
 import dev.jamiecraane.scorchedearth.shield.Shield
 import dev.jamiecraane.scorchedearth.sky.SkyStyle
+import kotlin.random.Random
 
 /**
  * Main game engine class that manages the game state and logic.
@@ -354,6 +355,7 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             currentRound++
 
             // Regenerate terrain
+            terrainManager.setTerrainVariance(25 + Random.nextInt(50), gameWidth, gameHeight)
             terrainManager.generateTerrain(gameWidth, gameHeight)
 
             // Store player data before regenerating players
