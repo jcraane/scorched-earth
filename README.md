@@ -6,6 +6,8 @@ A modern remake of the classic DOS game *Scorched Earth* implemented using Kotli
 
 Check out the [demo video](docs/movie.mov) to see the game in action!
 
+![Game Screenshot](docs/screenshot.png)
+
 ## About the Game
 
 Scorched Earth is a turn-based artillery game where players command tanks positioned on a destructible terrain. Players take turns adjusting their cannon's angle and power to fire projectiles at opponents, with the goal of destroying all enemy tanks.
