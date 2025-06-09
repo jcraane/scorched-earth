@@ -41,7 +41,13 @@ fun Header(
             fontWeight = FontWeight.Bold,
         )
 
-//            for debug purposes
+        DebugButtons(transitionToNextRoundClick)
+    }
+}
+
+@Composable
+private fun DebugButtons(transitionToNextRoundClick: () -> Unit) {
+    Row {
         Button(
             onClick = transitionToNextRoundClick,
             modifier = Modifier.Companion.padding(4.dp)
