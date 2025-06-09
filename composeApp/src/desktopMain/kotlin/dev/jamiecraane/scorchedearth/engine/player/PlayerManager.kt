@@ -346,10 +346,32 @@ class PlayerManager {
     }
 
     /**
-     * Advances to the next player.
+     * Advances to the next player, skipping dead players.
+     * @return True if an alive player was found, false if all players are dead
      */
-    fun nextPlayer() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+    fun nextPlayer(): Boolean {
+        // Store the initial player index to detect if we've checked all players
+        val initialIndex = currentPlayerIndex
+
+        // Keep incrementing until we find an alive player or have checked all players
+        do {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size
+
+            // If we've checked all players and none are alive, return false
+            if (currentPlayerIndex == initialIndex) {
+                // We've gone full circle and found no alive players
+                return false
+            }
+
+            // Check if the current player is alive
+            val currentPlayer = players[currentPlayerIndex]
+            if (currentPlayer.health > 0) {
+                // Found an alive player
+                return true
+            }
+
+            // If we get here, the current player is dead, so continue the loop
+        } while (true)
     }
 
     /**

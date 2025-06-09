@@ -511,4 +511,12 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      * Gets the weather manager.
      */
     val weather get() = weatherManager
+
+    /**
+     * Advances to the next player, skipping dead players.
+     * @return True if an alive player was found, false if all players are dead
+     */
+    fun nextPlayer(): Boolean {
+        return playerManager.nextPlayer()
+    }
 }

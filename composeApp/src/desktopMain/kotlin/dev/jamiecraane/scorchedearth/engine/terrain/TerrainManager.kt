@@ -33,7 +33,7 @@ class TerrainManager {
 
         // Select terrain generation method based on variance level
         return when {
-            terrainVarianceState >= 75 -> generateFractalTerrain(width, height)
+            terrainVarianceState >= 75 -> generateTerrainWithFeatures(width, height)
             terrainVarianceState >= 40 -> generateTerrainWithFeatures(width, height)
             terrainVarianceState > 0 -> generateMultiOctaveTerrain(width, height)
             else -> generateFlatTerrain(width, height)  // Completely flat terrain

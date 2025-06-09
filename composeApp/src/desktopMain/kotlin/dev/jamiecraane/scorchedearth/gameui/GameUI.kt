@@ -97,7 +97,9 @@ fun GameUI(
 
                         // If CPU couldn't make a decision (e.g., no valid targets), skip turn
                         game.gameState = GameState.WAITING_FOR_PLAYER
-                        game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.size
+                        // Use the game's nextPlayer method to skip dead players
+                        val foundAlivePlayer = game.nextPlayer()
+                        println("[DEBUG_LOG] CPU turn skipped, found alive player: $foundAlivePlayer")
                     }
                 } else {
                     // Not a CPU player, reset to waiting state

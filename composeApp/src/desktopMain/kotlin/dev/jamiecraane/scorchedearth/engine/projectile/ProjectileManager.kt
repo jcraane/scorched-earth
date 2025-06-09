@@ -371,7 +371,7 @@ class ProjectileManager(
         // If all mini-bombs have exploded, advance to the next player
         if (miniBombs.isEmpty() && projectile == null) {
             // All projectiles and mini-bombs are gone, move to next player
-            playerManager.nextPlayer()
+            val foundAlivePlayer = playerManager.nextPlayer()
             // Reset the tracer flag for the new player
             hasPlayerFiredTracerThisTurn = false
 
@@ -381,7 +381,7 @@ class ProjectileManager(
                 generateWind()
             }
 
-            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player, turn counter: $turnCounter")
+            println("[DEBUG_LOG] Turn ended after mini-bombs, switching to next player, found alive player: $foundAlivePlayer, turn counter: $turnCounter")
             return true
         }
 
@@ -733,7 +733,7 @@ class ProjectileManager(
                 return false
             } else {
                 // Not a tracer or player has already fired a tracer - switch to next player
-                playerManager.nextPlayer()
+                val foundAlivePlayer = playerManager.nextPlayer()
                 // Reset the tracer flag for the new player
                 hasPlayerFiredTracerThisTurn = false
 
@@ -743,7 +743,7 @@ class ProjectileManager(
                     generateWind()
                 }
 
-                println("[DEBUG_LOG] Turn ended, switching to next player, turn counter: $turnCounter")
+                println("[DEBUG_LOG] Turn ended, switching to next player, found alive player: $foundAlivePlayer, turn counter: $turnCounter")
                 return true
             }
         } else {
