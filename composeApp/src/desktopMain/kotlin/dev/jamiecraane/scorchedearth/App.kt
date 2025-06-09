@@ -88,7 +88,10 @@ fun App() {
             PlayerInventoryScreen(
                 players = players,
                 currentPlayerIndex = currentInventoryPlayerIndex,
-                onComplete = {
+                onComplete = { updatedPlayers ->
+                    // Update the players list with the modified players from the temporary game
+                    players = updatedPlayers
+
                     // Move to next player or start game if all players have selected items
                     if (currentInventoryPlayerIndex < players.size - 1) {
                         // Move to next player

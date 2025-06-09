@@ -17,6 +17,16 @@ import dev.jamiecraane.scorchedearth.sky.SkyStyle
  * This class coordinates the different components of the game.
  */
 class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: Int = 1) {
+    /**
+     * Data class to store player data between rounds.
+     */
+    private data class PlayerData(
+        val name: String,
+        val type: dev.jamiecraane.scorchedearth.model.PlayerType,
+        val money: Int,
+        val inventory: dev.jamiecraane.scorchedearth.inventory.GenericInventory,
+        val selectedProjectileType: ProjectileType
+    )
     // Current round
     var currentRound by mutableStateOf(1)
     // Game dimensions - these will be updated when the canvas size changes
@@ -35,10 +45,16 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
     private val explosionManager = ExplosionManager(terrainManager, playerManager)
     private val projectileManager = ProjectileManager(terrainManager, playerManager, explosionManager)
 
+    // Flag to indicate if players have been set externally
+    private var playersSetExternally = false
+
     init {
         // Initialize the game
         terrainManager.generateTerrain(gameWidth, gameHeight)
-        playerManager.generatePlayers(gameWidth, gameHeight, numberOfPlayers)
+        // Only generate players if they haven't been set externally
+        if (!playersSetExternally) {
+            playerManager.generatePlayers(gameWidth, gameHeight, numberOfPlayers)
+        }
         projectileManager.setGameDimensions(gameWidth, gameHeight)
         projectileManager.generateWind()
     }
@@ -52,18 +68,35 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
         gameHeight = height
         terrainManager.generateTerrain(width, height)
 
-        // Store player names and types before regenerating players
-        val playerNames = playerManager.players.map { it.name }
-        val playerTypes = playerManager.players.map { it.type }
+        // Store player data before regenerating players
+        val playerData = playerManager.players.map { player ->
+            PlayerData(
+                name = player.name,
+                type = player.type,
+                money = player.money,
+                inventory = player.inventory,
+                selectedProjectileType = player.selectedProjectileType
+            )
+        }
 
         // Regenerate players
         playerManager.generatePlayers(width, height, numberOfPlayers)
 
-        // Restore player names and types
+        // Restore player data
         playerManager.players.forEachIndexed { index, player ->
-            if (index < playerNames.size) {
-                player.name = playerNames[index]
-                player.type = playerTypes[index]
+            if (index < playerData.size) {
+                val data = playerData[index]
+                player.name = data.name
+                player.type = data.type
+                player.money = data.money
+
+                // Copy inventory items
+                data.inventory.getAllItems().forEach { item ->
+                    player.inventory.addItem(item.type, item.quantity)
+                }
+
+                // Set selected projectile type
+                player.selectedProjectileType = data.selectedProjectileType
             }
         }
 
@@ -264,17 +297,34 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
             // Regenerate terrain
             terrainManager.generateTerrain(gameWidth, gameHeight)
 
-            // Regenerate players with the same names and types
-            val playerNames = playerManager.players.map { it.name }
-            val playerTypes = playerManager.players.map { it.type }
+            // Store player data before regenerating players
+            val playerData = playerManager.players.map { player ->
+                PlayerData(
+                    name = player.name,
+                    type = player.type,
+                    money = player.money,
+                    inventory = player.inventory,
+                    selectedProjectileType = player.selectedProjectileType
+                )
+            }
 
             playerManager.generatePlayers(gameWidth, gameHeight, numberOfPlayers)
 
-            // Restore player names and types
+            // Restore player data
             playerManager.players.forEachIndexed { index, player ->
-                if (index < playerNames.size) {
-                    player.name = playerNames[index]
-                    player.type = playerTypes[index]
+                if (index < playerData.size) {
+                    val data = playerData[index]
+                    player.name = data.name
+                    player.type = data.type
+                    player.money = data.money
+
+                    // Copy inventory items
+                    data.inventory.getAllItems().forEach { item ->
+                        player.inventory.addItem(item.type, item.quantity)
+                    }
+
+                    // Set selected projectile type
+                    player.selectedProjectileType = data.selectedProjectileType
                 }
             }
 
@@ -313,7 +363,10 @@ class ScorchedEarthGame(private val numberOfPlayers: Int = 2, val totalRounds: I
      */
     var players
         get() = playerManager.players
-        set(value) { playerManager.players = value }
+        set(value) {
+            playersSetExternally = true
+            playerManager.players = value
+        }
 
     /**
      * Gets the current player index.

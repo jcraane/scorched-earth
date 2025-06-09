@@ -24,13 +24,13 @@ import dev.jamiecraane.scorchedearth.model.PlayerType
  *
  * @param players The list of players in the game
  * @param currentPlayerIndex The index of the current player selecting items
- * @param onComplete Callback when all players have selected their items
+ * @param onComplete Callback when all players have selected their items, returns the updated players list
  */
 @Composable
 fun PlayerInventoryScreen(
     players: List<Player>,
     currentPlayerIndex: Int,
-    onComplete: () -> Unit
+    onComplete: (List<Player>) -> Unit
 ) {
     // Create a temporary game instance just for inventory management
     val tempGame = remember(players, currentPlayerIndex) {
@@ -108,7 +108,10 @@ fun PlayerInventoryScreen(
                 onDismiss = { showInventory = false },
                 showBuyButton = true,
                 isLastPlayer = currentPlayerIndex == players.size - 1,
-                onNext = onComplete
+                onNext = {
+                    // Update the players list with the modified players from the temporary game
+                    onComplete(tempGame.players.toList())
+                }
             )
         }
     }
